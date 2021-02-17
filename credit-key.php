@@ -4,8 +4,8 @@ namespace CreditKey;
 /*
  * Plugin Name: Credit Key Payment Gateway
  * Description: Enable your customer to pay for your products through Credit Key.
- * Author: OnePix
- * Author URI: https://onepix.net
+ * Author: Credit Key
+ * Author URI: https://www.creditkey.com
  * Version: 1.0.0
  */
 

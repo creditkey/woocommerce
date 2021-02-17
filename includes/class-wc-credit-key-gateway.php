@@ -1,4 +1,11 @@
 <?php
+use CreditKey\Api;
+use CreditKey\Models\Address;
+use CreditKey\Models\Charges;
+use CreditKey\Models\CartItem;
+use CreditKey\Checkout;
+use CreditKey\Main;
+use CreditKey\Orders;
 
 class WC_Credit_Key extends WC_Payment_Gateway {
     /**
@@ -10,10 +17,8 @@ class WC_Credit_Key extends WC_Payment_Gateway {
         $this->id = 'credit_key';
         $this->method_title         = esc_html__( 'Credit Key', 'credit_key' );
         $this->method_description   = esc_html__( 'Enable your customer to pay for your products through Credit Key.', 'credit_key' );
-        $this->icon                 = apply_filters( 'woocommerce_gateway_icon', $plugin_dir . 'assets/images/credit-key-logo.svg' );
-        $this->supports             = array(
-            'products', 'refunds'
-        );
+        $this->icon                 = apply_filters( 'woocommerce_gateway_icon', Main::$plugin_url . 'assets/images/credit-key-logo.svg' );
+        $this->supports             = array( 'products', 'refunds' );
 
         // Method with all the options fields
         $this->init_form_fields();
@@ -36,6 +41,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 
         // Is displayed in checkout
         add_filter( 'woocommerce_available_payment_gateways', array( $this, 'credit_key_gateway_enable_condition' ));
+        add_action('wp_footer', array($this, 'test_func'));
     }
 
     /**
@@ -135,7 +141,6 @@ class WC_Credit_Key extends WC_Payment_Gateway {
             $code       = $e->getCode();
             $file       = $e->getFile();
             $line       = $e->getLine();
-            //$trace      = $e->getTrace();
 
             $data       = array();
             if($message){
@@ -169,14 +174,14 @@ class WC_Credit_Key extends WC_Payment_Gateway {
                         $price              = $values['data']->get_price();
                         $quantity           = $values['quantity'];
                         $sku                = $values['data']->get_sku();
-                        $cart_items[] = new \CreditKey\Models\CartItem($merchant_id, $name, $price, $sku, $quantity, null, null);
+                        $cart_items[] = new CartItem($merchant_id, $name, $price, $sku, $quantity, null, null);
                     }
                 }
 
                 $customerId = $this->get_customer_id();
 
-                \CreditKey\Api::configure($this->api_url, $this->public_key, $this->shared_secret);
-                $is_displayed = \CreditKey\Checkout::isDisplayedInCheckout($cart_items, $customerId);
+                Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+                $is_displayed = Checkout::isDisplayedInCheckout($cart_items, $customerId);
                 if( !$is_displayed ){
                     unset( $available_gateways['credit_key'] );
                 }
@@ -193,82 +198,135 @@ class WC_Credit_Key extends WC_Payment_Gateway {
         echo '<p>' . $this->description. '</p>';
     }
 
+    private function get_order_data($order_id) {
+
+	    $order = wc_get_order( $order_id );
+
+	    // Create billing data
+	    $billing_first_name    = ($order->get_billing_first_name()) ? $order->get_billing_first_name() : null;
+	    $billing_last_name     = ($order->get_billing_last_name())  ? $order->get_billing_last_name() : null;
+	    $billing_company_name  = ($order->get_billing_company())    ? $order->get_billing_company() : null;
+	    $billing_email         = ($order->get_billing_email())      ? $order->get_billing_email() : null;
+	    $billing_address1      = ($order->get_billing_address_1())  ? $order->get_billing_address_1() : null;
+	    $billing_address2      = ($order->get_billing_address_2())  ? $order->get_billing_address_2() : null;
+	    $billing_city          = ($order->get_billing_city())       ? $order->get_billing_city() : null;
+	    $billing_state         = ($order->get_billing_state())      ? $order->get_billing_state() : null;
+	    $billing_zip           = ($order->get_billing_postcode())   ? $order->get_billing_postcode() : null;
+	    $billing_phone_number  = ($order->get_billing_phone())      ? $order->get_billing_phone() : null;
+
+	    $billing_address = new Address($billing_first_name, $billing_last_name, $billing_company_name, $billing_email,
+		    $billing_address1, $billing_address2, $billing_city, $billing_state, $billing_zip, $billing_phone_number);
+
+	    // Create shipping data
+	    $shipping_first_name    = ($order->get_shipping_first_name() ) ? $order->get_shipping_first_name() : null;
+	    $shipping_last_name     = ($order->get_shipping_last_name() )  ? $order->get_shipping_last_name() : null;
+	    $shipping_company_name  = ( $order->get_shipping_company() )   ? $order->get_shipping_company() : null;
+	    $shipping_email         = $billing_email;
+	    $shipping_address1      = ($order->get_shipping_address_1() )  ? $order->get_shipping_address_1() : null;
+	    $shipping_address2      = ($order->get_shipping_address_2() )  ? $order->get_shipping_address_2() : null;
+	    $shipping_city          = ($order->get_shipping_city() )       ? $order->get_shipping_city() : null;
+	    $shipping_state         = ($order->get_shipping_state() )      ? $order->get_shipping_state() : null;
+	    $shipping_zip           = ($order->get_shipping_postcode())    ? $order->get_shipping_postcode() : null;
+	    $shipping_phone_number  = $billing_phone_number;
+
+	    $shipping_address = new Address($shipping_first_name, $shipping_last_name, $shipping_company_name, $shipping_email,
+		    $shipping_address1, $shipping_address2, $shipping_city, $shipping_state, $shipping_zip, $shipping_phone_number);
+
+	    // Create Order items data
+	    $total   = 0;
+	    $discount_amount = 0;
+	    $order_items = array();
+	    foreach ( $order->get_items() as $key => $item) {
+		    $product        = $item->get_product();
+		    $product_id     = $product->get_id();
+		    $product_name   = $product->get_name();
+		    $product_price  = $product->get_price();
+		    $product_sku    = $product->get_sku();
+		    $product_qty    = intval($item->get_quantity());
+		    $order_items[]  = new CartItem($product_id, $product_name, $product_price, $product_sku, $product_qty, null, null);
+
+		    $total              += $product->get_regular_price() * $product_qty;
+		    $discount_amount    += ($product->get_regular_price() - $product_price) * $product_qty;
+	    }
+	    $total          = number_format($total, 2);
+	    $discount_amount= number_format($discount_amount + $order->get_total_discount(), 2);
+	    $shipping       = number_format($order->get_shipping_total(), 2);
+	    $tax            = number_format($order->get_total_tax(), 2);
+	    $grand_total    = number_format($total + $shipping + $tax - $discount_amount, 2);
+
+	    // Create charges data
+	    $charges            = new Charges($total, $shipping, $tax, $discount_amount, $grand_total);
+
+	    return array(
+	    	'order_items'       => $order_items,
+	    	'billing_address'   => $billing_address,
+		    'shipping_address'  => $shipping_address,
+		    'charges'           => $charges,
+	    );
+    }
+
     public function process_payment( $order_id ) {
-        $order = wc_get_order( $order_id );
 
-        // Create billing data
-        $billing_first_name    = ($order->get_billing_first_name()) ? $order->get_billing_first_name() : null;
-        $billing_last_name     = ($order->get_billing_last_name())  ? $order->get_billing_last_name() : null;
-        $billing_company_name  = ($order->get_billing_company())    ? $order->get_billing_company() : null;
-        $billing_email         = ($order->get_billing_email())      ? $order->get_billing_email() : null;
-        $billing_address1      = ($order->get_billing_address_1())  ? $order->get_billing_address_1() : null;
-        $billing_address2      = ($order->get_billing_address_2())  ? $order->get_billing_address_2() : null;
-        $billing_city          = ($order->get_billing_city())       ? $order->get_billing_city() : null;
-        $billing_state         = ($order->get_billing_state())      ? $order->get_billing_state() : null;
-        $billing_zip           = ($order->get_billing_postcode())   ? $order->get_billing_postcode() : null;
-        $billing_phone_number  = ($order->get_billing_phone())      ? $order->get_billing_phone() : null;
+		$order_data         = $this->get_order_data($order_id);
+	    $order_items        = $order_data['order_items'];
+	    $billing_address    = $order_data['billing_address'];
+	    $shipping_address   = $order_data['shipping_address'];
+	    $charges            = $order_data['charges'];
+        $customerId         = $this->get_customer_id();
+        $remoteId           = $order_id;
+        $returnUrl          = home_url() . '/wc-api/credit_key?order_id=' . $order_id . '&id=%CKKEY%';
+        $cancelUrl          = wc_get_checkout_url();
 
-        $billing_address = new \CreditKey\Models\Address($billing_first_name, $billing_last_name, $billing_company_name, $billing_email,
-            $billing_address1, $billing_address2, $billing_city, $billing_state, $billing_zip, $billing_phone_number);
-
-        // Create shipping data
-        $shipping_first_name    = ($order->get_shipping_first_name() ) ? $order->get_shipping_first_name() : null;
-        $shipping_last_name     = ($order->get_shipping_last_name() )  ? $order->get_shipping_last_name() : null;
-        $shipping_company_name  = ( $order->get_shipping_company() )   ? $order->get_shipping_company() : null;
-        $shipping_email         = $billing_email;
-        $shipping_address1      = ($order->get_shipping_address_1() )  ? $order->get_shipping_address_1() : null;
-        $shipping_address2      = ($order->get_shipping_address_2() )  ? $order->get_shipping_address_2() : null;
-        $shipping_city          = ($order->get_shipping_city() )       ? $order->get_shipping_city() : null;
-        $shipping_state         = ($order->get_shipping_state() )      ? $order->get_shipping_state() : null;
-        $shipping_zip           = ($order->get_shipping_postcode())    ? $order->get_shipping_postcode() : null;
-        $shipping_phone_number  = $billing_phone_number;
-
-        $shipping_address = new \CreditKey\Models\Address($shipping_first_name, $shipping_last_name, $shipping_company_name, $shipping_email,
-            $shipping_address1, $shipping_address2, $shipping_city, $shipping_state, $shipping_zip, $shipping_phone_number);
-
-        // Create Order items data
-        $order_items            = array();
-        $total   = 0;
-        $discount_amount = 0;
-        $order_items = array();
-        foreach ( $order->get_items() as $key => $item) {
-            $product        = $item->get_product();
-            $product_id     = $product->get_id();
-            $product_name   = $product->get_name();
-            $product_price  = $product->get_price();
-            $product_sku    = $product->get_sku();
-            $product_qty    = intval($item->get_quantity());
-            $order_items[]  = new \CreditKey\Models\CartItem($product_id, $product_name, $product_price, $product_sku, $product_qty, null, null);
-
-            $total              += $product->get_regular_price() * $product_qty;
-            $discount_amount    += ($product->get_regular_price() - $product_price) * $product_qty;
-        }
-        $total          = number_format($total, 2);
-        $discount_amount= number_format($discount_amount + $order->get_total_discount(), 2);
-        $shipping       = number_format($order->get_shipping_total(), 2);
-        $tax            = number_format($order->get_total_tax(), 2);
-        $grand_total    = number_format($total + $shipping + $tax - $discount_amount, 2);
-
-        // Create charges data
-        $charges            = new \CreditKey\Models\Charges($total, $shipping, $tax, $discount_amount, $grand_total);
-
-        $customerId = $this->get_customer_id();
-
-        $remoteId = $this->order_prefix . $order_id;
-        $returnUrl = home_url() . '/wc-api/credit_key';
-        $cancelUrl = wc_get_checkout_url();
-
-        \CreditKey\Api::configure($this->api_url, $this->public_key, $this->shared_secret);
-        $customerCheckoutUrl = \CreditKey\Checkout::beginCheckout($order_items,
+        Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+        $customerCheckoutUrl = Checkout::beginCheckout($order_items,
             $billing_address, $shipping_address, $charges, $remoteId, $customerId,
             $returnUrl, $cancelUrl, 'redirect');
 
         return ['result' => 'success', 'redirect' => $customerCheckoutUrl];
     }
 
+	public function process_refund( $order_id, $amount = null, $reason = '' ) {
+    	$ck_order_id = get_post_meta($order_id, 'ck_order_id', true);
+    	if( isset($ck_order_id) && $amount > 0 ) {
+		    Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+		    $refund_order = Orders::refund($ck_order_id, $amount);
+		    return true;
+	    }
+	}
+
     public function webhook(){
-        if( isset($_GET['id']) ) {
-            $order_id = $_GET['id'];
+        if( isset($_GET) ) {
+
+            $ck_order_id = $_GET['id'];
+            $order_id = $_GET['order_id'];
+            $order = wc_get_order($order_id);
+            update_post_meta($order_id, 'ck_order_id', $ck_order_id);
+
+	        Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+	        $complete_checkout = Checkout::completeCheckout($ck_order_id);
+	        if( $complete_checkout ){
+
+		        $order->add_order_note(  esc_html__( 'Order paid via Credit Key.', 'credit_key' ), 1 );
+		        $order->payment_complete( $ck_order_id );
+		        WC()->cart->empty_cart();
+		        $order_status = $order->get_status();
+
+		        $order_data         = $this->get_order_data($order_id);
+		        $order_items        = $order_data['order_items'];
+		        $shipping_address   = $order_data['shipping_address'];
+		        $charges            = $order_data['charges'];
+
+		        Orders::update($ck_order_id, $order_status, $order_id, $order_items, $charges, $shipping_address);
+
+		        $thank_you_url = $order->get_checkout_order_received_url();
+		        header('Location: ' . $thank_you_url);
+		        die();
+
+	        } else {
+		        wp_redirect( wc_get_checkout_url() );
+		        exit;
+	        }
         }
+        die();
     }
 }
