@@ -13,10 +13,12 @@ class Main
 {
     private static $instance;
     public static $plugin_url;
+	public static $gateway_id;
     public static $plugin_path;
 
     private function __construct()
     {
+	    self::$gateway_id = 'credit_key';
         self::$plugin_url = plugin_dir_url(__FILE__);
         self::$plugin_path = plugin_dir_path(__FILE__);
         add_action('plugins_loaded', [$this, 'pluginsLoaded']);
@@ -52,6 +54,7 @@ class Main
         require_once 'sdk/Checkout.php';
         require_once 'sdk/Orders.php';
         require_once 'includes/class-wc-credit-key-gateway.php';
+	    require_once 'includes/class-wc-credit-key-js-gateway.php';
     }
 
     public function woocommercePaymentGateways($gateways)

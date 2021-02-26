@@ -1,0 +1,6 @@
+.creditkey a:hover {
+    cursor: pointer !important;
+}
+.creditkey .ck-modal.is-active{
+    position: fixed;
+}

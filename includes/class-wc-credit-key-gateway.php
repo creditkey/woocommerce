@@ -8,14 +8,14 @@ use CreditKey\Checkout;
 use CreditKey\Main;
 use CreditKey\Orders;
 
+
 class WC_Credit_Key extends WC_Payment_Gateway {
 	/**
 	 * Class constructor
 	 */
 	public function __construct() {
-		$plugin_dir = plugin_dir_url( __FILE__ );
 
-		$this->id                 = 'credit_key';
+		$this->id                 = Main::$gateway_id;
 		$this->method_title       = esc_html__( 'Credit Key', 'credit_key' );
 		$this->method_description = esc_html__( 'Enable your customer to pay for your products through Credit Key.', 'credit_key' );
 		$this->icon               = apply_filters( 'woocommerce_gateway_icon', Main::$plugin_url . 'assets/images/credit-key-logo.svg' );
@@ -51,23 +51,19 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		add_action( 'woocommerce_update_order', array( $this, 'call_credit_key_order_update' ), 10, 1 );
 
 		add_filter( 'wc_order_statuses', array( $this, 'control_order_statuses' ), 10, 1 );
+		add_action('admin_enqueue_scripts', array($this, 'dashboard_payment_scripts'));
 
-		//add_action('wp_footer', array($this, 'test_func'));
 	}
 
 	/**
 	 * Plugin options
 	 */
-
-	public function test_func() {
-
-	}
-
+	
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled' => array(
-				'title'       => esc_html__( 'Enable/Disable', 'credit_key' ),
-				'label'       => esc_html__( 'Enable Credit Key Payment Gateway', 'credit_key' ),
+				'title'       => esc_html__( 'Enable Credit Key Payment Gateway', 'credit_key' ),
+				'label'       => esc_html__( 'Enable/Disable', 'credit_key' ),
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
@@ -80,17 +76,12 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'default'     => esc_html__( 'Pay with Credit key', 'credit_key' ),
 				'desc_tip'    => true,
 			),
+			
 			'description' => array(
 				'title'       => esc_html__( 'Description', 'credit_key' ),
 				'type'        => 'textarea',
 				'description' => esc_html__( 'This controls the description which the user sees during checkout.', 'credit_key' ),
 				'default'     => esc_html__( 'Pay the order via Secret Key payment gateway.', 'credit_key' ),
-			),
-
-			'order_prefix' => array(
-				'title'   => esc_html__( 'Orders prefix', 'credit_key' ),
-				'type'    => 'text',
-				'default' => 'wс_ck_',
 			),
 
 			'is_test' => array(
@@ -110,7 +101,6 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'title' => esc_html__( 'Test Public Key', 'credit_key' ),
 				'type'  => 'text',
 			),
-
 
 			'shared_secret' => array(
 				'title' => esc_html__( 'Shared Secret', 'credit_key' ),
@@ -132,13 +122,58 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'type'  => 'text',
 			),
 			'logging'      => array(
-				'title'       => esc_html__( 'Enable/Disable', 'credit_key' ),
-				'label'       => esc_html__( 'Enable logging', 'credit_key' ),
+				'title'       => esc_html__( 'Enable logging', 'credit_key' ),
+				'label'       => esc_html__( 'Enable/Disable', 'credit_key' ),
+				'type'        => 'checkbox',
+				'description' => '',
+				'default'     => 'no'
+			),
+			'button_display'  => array(
+				'title'       => 'Type of marketing display',
+				'description' => 'Choose type of marketing display to retrieve',
+				'type'        => 'select',
+				'options'     => array(
+					'button'  => 'button',
+					'text'    => 'text'
+				),
+				'desc_tip'    => false,
+			),
+			'button_size'     => array(
+				'title'       => 'Type of marketing display size',
+				'description' => 'Choose type of marketing display size to retrieve',
+				'type'        => 'select',
+				'options'     => array(
+					'small'   => 'small',
+					'medium'  => 'medium',
+					'large'   => 'large'
+				),
+				'desc_tip'    => false,
+			),
+			'product_page'      => array(
+				'title'       => esc_html__( 'Promotional Messaging on Product', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
+				'type'        => 'checkbox',
+				'description' => '',
+				'default'     => 'no'
+			),
+			'cart_page'      => array(
+				'title'       => esc_html__( 'Promotional Messaging on Cart Page', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
 			),
 		);
+	}
+
+	public function dashboard_payment_scripts() {
+
+		if ( 'no' === $this->enabled ) {
+			return;
+		}
+		wp_register_script('creditkey-dashboard-scripts', Main::$plugin_url . 'assets/js/scripts-dashboard.js', array('jquery'), time());
+		wp_enqueue_script('creditkey-dashboard-scripts');
+
 	}
 
 	private function get_customer_id() {
@@ -432,37 +467,27 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				$is_refunded  = get_post_meta( $order_id, 'ck_is_refunded', true );
 				$is_cancelled = get_post_meta( $order_id, 'ck_is_cancelled', true );
 
-				if ( $is_confirmed ) {
-					//Remove Cancelled status
-					if ( isset( $wc_statuses_arr['wc-cancelled'] ) ) {
-						unset( $wc_statuses_arr['wc-cancelled'] );
+				if ( $is_confirmed && !$is_refunded ) {
+					foreach ($wc_statuses_arr as $status_key => $status) {
+						if( $status_key != 'wc-completed' ) {
+							unset( $wc_statuses_arr[$status_key] );
+						}
 					}
 				}
 
 				if ( $is_refunded ) {
-
-					// Remove Completed status
-					if ( isset( $wc_statuses_arr['wc-completed'] ) ) {
-						unset( $wc_statuses_arr['wc-completed'] );
+					foreach ($wc_statuses_arr as $status_key => $status) {
+						if( $status_key != 'wc-refunded' ) {
+							unset( $wc_statuses_arr[$status_key] );
+						}
 					}
-
-					//Remove Cancelled status
-					if ( isset( $wc_statuses_arr['wc-cancelled'] ) ) {
-						unset( $wc_statuses_arr['wc-cancelled'] );
-					}
-
 				}
 
 				if ( $is_cancelled ) {
-
-					// Remove Completed status
-					if ( isset( $wc_statuses_arr['wc-completed'] ) ) {
-						unset( $wc_statuses_arr['wc-completed'] );
-					}
-
-					// Remove Refunded status
-					if( isset( $wc_statuses_arr['wc-refunded'] ) ){
-						unset( $wc_statuses_arr['wc-refunded'] );
+					foreach ($wc_statuses_arr as $status_key => $status) {
+						if( $status_key != 'wc-cancelled' ) {
+							unset( $wc_statuses_arr[$status_key] );
+						}
 					}
 
 				}
