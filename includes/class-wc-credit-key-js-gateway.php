@@ -75,12 +75,12 @@ class CreditKeyNotCheckoutPayment {
 			$staging    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
 			$public_key = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
             include_once Main::$plugin_path . 'template-parts/cart-button.php';
+            echo '<div id="modal-pdp"></div>';
 ?>
             <script type="text/javascript">
                 let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $staging; ?>');
-                //let modalPdp = document.getElementById('modal-pdp');
             </script>
-<?php
+			<?php
 		}
 	}
 

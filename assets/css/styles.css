@@ -1,6 +1,15 @@
+.creditkey a {
+    text-decoration: none !important;
+    line-height: 24px;
+    text-align: center;
+}
 .creditkey a:hover {
     cursor: pointer !important;
+    text-decoration: underline !important;
 }
-.creditkey .ck-modal.is-active{
+.creditkey .ck-modal.is-active {
     position: fixed;
+}
+.creditkey #money {
+    color: #3D9CE5 !important;
 }
