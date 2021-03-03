@@ -33,7 +33,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		$this->order_prefix  = $this->get_option( ' order_prefix ' );
 		$this->public_key    = ( $this->testmode == 'yes' ) ? $this->get_option( 'test_public_key' ) : $this->get_option( 'public_key' );
 		$this->shared_secret = ( $this->testmode == 'yes' ) ? $this->get_option( 'test_shared_secret' ) : $this->get_option( 'shared_secret' );
-		$this->api_url       = ( $this->testmode == 'yes' ) ? $this->get_option( 'test_api_url' ) : $this->get_option( 'api_url' );
+		$this->api_url       = ( $this->testmode == 'yes' ) ? 'https://staging.creditkey.com/app' : 'https://www.creditkey.com/app';
 		$this->logging       = $this->get_option( 'logging' );
 
 		// Save payment gateway settings
@@ -111,16 +111,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'title' => esc_html__( 'Test Shared Secret', 'credit_key' ),
 				'type'  => 'text',
 			),
-
-			'api_url' => array(
-				'title' => esc_html__( 'Production URL', 'credit_key' ),
-				'type'  => 'text',
-			),
-
-			'test_api_url' => array(
-				'title' => esc_html__( 'Staging URL', 'credit_key' ),
-				'type'  => 'text',
-			),
+			
 			'logging'      => array(
 				'title'       => esc_html__( 'Enable logging', 'credit_key' ),
 				'label'       => esc_html__( 'Enable/Disable', 'credit_key' ),
