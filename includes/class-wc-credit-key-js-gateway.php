@@ -12,7 +12,7 @@ class CreditKeyNotCheckoutPayment {
 		$this->gateway_settings = get_option('woocommerce_' . Main::$gateway_id . '_settings');
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 		add_action( 'woocommerce_after_add_to_cart_button', array( $this, 'add_credit_key_button' ) );
-		add_action('woocommerce_proceed_to_checkout', array($this, 'add_credit_key_button_to_cart' ));
+		add_action('woocommerce_after_cart_totals', array($this, 'add_credit_key_button_to_cart' ));
 
 		add_action( 'wp_ajax_nopriv_get_cart_data', [$this, 'get_cart_data_handler'] );
 		add_action( 'wp_ajax_get_cart_data', [$this, 'get_cart_data_handler'] );
@@ -27,19 +27,24 @@ class CreditKeyNotCheckoutPayment {
 	public function payment_scripts() {
 
 		$gateway_settings = $this->gateway_settings;
+		$show_on_product_page = (isset($gateway_settings['product_page'])) ? $gateway_settings['product_page'] : 'no';
 	    $is_enable = $gateway_settings['enabled'];
-		if ( 'no' === $is_enable ) {
+		if ( 'no' === $is_enable || $show_on_product_page == 'no' ) {
 			return;
 		}
 
-		if( is_product() || is_cart() ){
-			wp_register_script('credit-key-js', Main::$plugin_url . 'assets/js/creditkey-js.js', null, '1.0.81');
-			wp_enqueue_script('credit-key-js');
+		if( is_product() || is_cart() ) {
+			wp_register_script( 'credit-key-js', Main::$plugin_url . 'assets/js/creditkey-js.js', null, '1.0.81' );
+			wp_enqueue_script( 'credit-key-js' );
 
-			wp_register_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array('jquery', 'credit-key-js'), time());
-			wp_enqueue_script('credit-key-scripts');
-			wp_localize_script('credit-key-scripts', 'CreditKey', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
-
+			wp_register_script( 'credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array(
+				'jquery',
+				'credit-key-js'
+			), time() );
+			wp_enqueue_script( 'credit-key-scripts' );
+			wp_localize_script( 'credit-key-scripts', 'CreditKey', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+		}
+		if( is_product() || is_cart() || is_checkout() ){
 			wp_enqueue_style( 'credit-key-styles', Main::$plugin_url . 'assets/css/styles.css' );
 		}
 
@@ -48,6 +53,7 @@ class CreditKeyNotCheckoutPayment {
 	public function add_credit_key_button(){
 		$gateway_settings   = $this->gateway_settings;
 	    $show_on_product_page = (isset($gateway_settings['product_page'])) ? $gateway_settings['product_page'] : 'no';
+		$active_plugin = (isset($gateway_settings['enabled'])) ? $gateway_settings['enabled'] : 'no';
 
 		$product_id = get_the_ID();
 		$product = wc_get_product($product_id);
@@ -55,7 +61,7 @@ class CreditKeyNotCheckoutPayment {
 		$min_total = $gateway_settings['min_product'];
 		$button_type = $gateway_settings['button_display'];
 
-	    if($show_on_product_page == 'yes' && $product_price >= $min_total)
+	    if($show_on_product_page == 'yes' && $product_price >= $min_total && $active_plugin == 'yes') {
 		    switch ($button_type) {
 			    case 'text_no_modal':
 				    echo '<div id="pdp-no-modal"></div>';
@@ -113,18 +119,20 @@ class CreditKeyNotCheckoutPayment {
                 } ?>
             </script>
 		    <?php
+        }
 	}
 
 	public function add_credit_key_button_to_cart(){
 	    global $woocommerce;
 		$gateway_settings   = $this->gateway_settings;
 		$show_on_cart_page = (isset($gateway_settings['cart_page'])) ? $gateway_settings['cart_page'] : 'no';
+		$active_plugin = (isset($gateway_settings['enabled'])) ? $gateway_settings['enabled'] : 'no';
 
 		$cart_totals = $woocommerce->cart->get_totals();
 		$cart_total = (float)$cart_totals['total'];
 		$min_total = $gateway_settings['min_cart'];
 
-		if($show_on_cart_page == 'yes' && $cart_total >= $min_total){
+		if($show_on_cart_page == 'yes' && $cart_total >= $min_total && $active_plugin == 'yes'){
 			$staging    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
 			$public_key = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
             include_once Main::$plugin_path . 'template-parts/cart-button.php';

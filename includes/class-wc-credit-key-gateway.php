@@ -18,8 +18,8 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		$this->id                 = Main::$gateway_id;
 		$this->method_title       = esc_html__( 'Credit Key', 'credit_key' );
 		$this->method_description = esc_html__( 'Enable your customer to pay for your products through Credit Key.', 'credit_key' );
-		$this->icon               = apply_filters( 'woocommerce_gateway_icon', Main::$plugin_url . 'assets/images/credit-key-logo.svg' );
 		$this->supports           = array( 'products', 'refunds' );
+		$this->order_button_text  = __( 'Continue with Credit Key', 'credit_key' );
 
 		// Method with all the options fields
 		$this->init_form_fields();
@@ -56,6 +56,10 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		add_filter( 'wc_order_statuses', array( $this, 'control_order_statuses' ), 10, 1 );
 		add_action('admin_enqueue_scripts', array($this, 'dashboard_payment_scripts'));
 
+		add_filter( 'woocommerce_gateway_title', array($this, 'change_payment_gateway_title'), 100, 2 );
+
+		add_filter( 'woocommerce_gateway_icon', array($this, 'change_gateway_icon'), 10, 2 );
+
 	}
 
 	/**
@@ -73,7 +77,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 			),
 
 			'title'       => array(
-				'title'       => esc_html__( 'Title', 'credit_key' ),
+				'title'       => esc_html__( "Alt text for Gateway's icon on Checkout page", 'credit_key' ),
 				'type'        => 'text',
 				'description' => esc_html__( 'This controls the title which the user sees during checkout.', 'credit_key' ),
 				'default'     => esc_html__( 'Pay with Credit key', 'credit_key' ),
@@ -88,7 +92,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 			),
 
 			'min_checkout'      => array(
-				'title'       => esc_html__( 'Minimum threshold for displaying the payment method', 'credit_key' ),
+				'title'       => esc_html__( 'Minimum threshold to display the Credit Key payment method in checkout.', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'number',
 				'description' => '',
@@ -508,4 +512,20 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 
 		return $wc_statuses_arr;
 	}
+
+	public function change_payment_gateway_title( $title, $payment_id ){
+		if( $payment_id === $this->id ) {
+			$title = '';
+		}
+		return $title;
+	}
+
+	public function change_gateway_icon( $icon, $id ) {
+		if ( $id === $this->id ) {
+			return '<img src="' . Main::$plugin_url . 'assets/images/ck-checkout.png' . '" alt="' . $this->title . '"> ';
+		} else {
+			return $icon;
+		}
+	}
+
 }
