@@ -33,7 +33,7 @@ class CreditKeyNotCheckoutPayment {
 		}
 
 		if( is_product() || is_cart() ){
-			wp_register_script('credit-key-js', Main::$plugin_url . 'assets/js/creditkey-js.js', null, '1.0.80');
+			wp_register_script('credit-key-js', Main::$plugin_url . 'assets/js/creditkey-js.js', null, '1.0.81');
 			wp_enqueue_script('credit-key-js');
 
 			wp_register_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array('jquery', 'credit-key-js'), time());
@@ -48,24 +48,71 @@ class CreditKeyNotCheckoutPayment {
 	public function add_credit_key_button(){
 		$gateway_settings   = $this->gateway_settings;
 	    $show_on_product_page = (isset($gateway_settings['product_page'])) ? $gateway_settings['product_page'] : 'no';
-	    if($show_on_product_page == 'yes'){
-		    $product_id = get_the_ID();
-		    $product = wc_get_product($product_id);
-		    $product_price = $product->get_price();
-		    echo '<div id="pdp"></div>';
+
+		$product_id = get_the_ID();
+		$product = wc_get_product($product_id);
+		$product_price = $product->get_price();
+		$min_total = $gateway_settings['min_product'];
+		$button_type = $gateway_settings['button_display'];
+
+	    if($show_on_product_page == 'yes' && $product_price >= $min_total)
+		    switch ($button_type) {
+			    case 'text_no_modal':
+				    echo '<div id="pdp-no-modal"></div>';
+				    break;
+			    case 'button_modal':
+				    echo '<a href="#" onclick="launchModalPdp()"><div id="pdp-button-modal"></div></a>';
+				    break;
+			    case 'button_no_modal':
+				    echo '<div id="pdp-button-no-modal"></div>';
+				    break;
+			    default:
+			        echo '<a href="#" onclick="launchModalPdp()"><div id="pdp-modal"></div></a>';
+				    echo '<div id="modal-pdp"></div>';
+		    }
+
 		    $staging    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
 		    $public_key = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
-		    $button_display = ( isset($gateway_settings['button_display']) ) ? $gateway_settings['button_display'] : 'button';
-		    $button_size    = ( isset($gateway_settings['button_size']) ) ? $gateway_settings['button_size'] : 'small';
 ?>
             <script type="text/javascript">
                 let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $staging; ?>');
                 let charges = new ck.Charges(<?php echo $product_price; ?>, 0, 0 , 0, <?php echo $product_price; ?>);
-                client.get_marketing_display(charges, 'pdp', '<?php echo $button_display; ?>', '<?php echo $button_size; ?>')
-                    .then(res => pdp.innerHTML = res);
+            <?php
+                switch ($button_type) {
+                    case 'text_no_modal': ?>
+                        let pdp = document.getElementById('pdp-no-modal');
+                        client.get_marketing_display(charges, 'pdp', 'text', 'special')
+                            .then(res => pdp.innerHTML = res);
+            <?php
+                        break;
+                    case 'button_modal': ?>
+                        let pdp_button_modal = document.getElementById('pdp-button-modal');
+                        client.get_marketing_display(charges, 'pdp', 'button', 'medium', 'static')
+                            .then(res => pdp_button_modal.innerHTML = res);
+                        function launchModalPdp() {
+                            console.log(client);
+                            client.enhanced_pdp_modal(charges);
+                        }
+            <?php
+                        break;
+                    case 'button_no_modal': ?>
+                        let pdp_button = document.getElementById('pdp-button-no-modal');
+                        client.get_marketing_display(charges, 'pdp', 'button', 'medium')
+                            .then(res => pdp_button.innerHTML = res);
+            <?php
+                        break;
+                    default: ?>
+                        let pdp_modal = document.getElementById('pdp-modal');
+                        client.get_marketing_display(charges, 'pdp', 'text', 'special', 'static')
+                            .then(res => pdp_modal.innerHTML = res);
+                    function launchModalPdp() {
+                        console.log(client);
+                        client.enhanced_pdp_modal(charges);
+                    }
+            <?php
+                } ?>
             </script>
 		    <?php
-        }
 	}
 
 	public function add_credit_key_button_to_cart(){

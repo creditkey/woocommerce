@@ -131,27 +131,18 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'default'     => 'no'
 			),
 			'button_display'  => array(
-				'title'       => 'Type of marketing display',
+				'title'       => 'Type of marketing display button',
 				'description' => 'Choose type of marketing display to retrieve',
 				'type'        => 'select',
 				'options'     => array(
-					'button'  => 'button',
-					'text'    => 'text'
+					'text_modal'       => 'Text with Modal',
+					'text_no_modal'    => 'Text without Modal',
+					'button_modal'     => 'Button with Modal',
+					'button_no_modal'  => 'Button without Modal',
 				),
 				'desc_tip'    => false,
 			),
-			'button_size'     => array(
-				'title'       => 'Type of marketing display size',
-				'description' => 'Choose type of marketing display size to retrieve',
-				'type'        => 'select',
-				'options'     => array(
-					'small'   => 'small',
-					'medium'  => 'medium',
-					'large'   => 'large'
-				),
-				'desc_tip'    => false,
-			),
-			'product_page'      => array(
+			'product_page'    => array(
 				'title'       => esc_html__( 'Promotional Messaging on Product', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'checkbox',
