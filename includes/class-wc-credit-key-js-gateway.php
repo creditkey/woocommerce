@@ -69,9 +69,15 @@ class CreditKeyNotCheckoutPayment {
 	}
 
 	public function add_credit_key_button_to_cart(){
+	    global $woocommerce;
 		$gateway_settings   = $this->gateway_settings;
 		$show_on_cart_page = (isset($gateway_settings['cart_page'])) ? $gateway_settings['cart_page'] : 'no';
-		if($show_on_cart_page == 'yes'){
+
+		$cart_totals = $woocommerce->cart->get_totals();
+		$cart_total = (float)$cart_totals['total'];
+		$min_total = $gateway_settings['min_cart'];
+
+		if($show_on_cart_page == 'yes' && $cart_total >= $min_total){
 			$staging    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
 			$public_key = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
             include_once Main::$plugin_path . 'template-parts/cart-button.php';

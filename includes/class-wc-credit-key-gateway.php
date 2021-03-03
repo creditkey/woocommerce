@@ -56,22 +56,11 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		add_filter( 'wc_order_statuses', array( $this, 'control_order_statuses' ), 10, 1 );
 		add_action('admin_enqueue_scripts', array($this, 'dashboard_payment_scripts'));
 
-		add_action('wp_footer', array($this, 'test_func'));
 	}
 
 	/**
 	 * Plugin options
 	 */
-
-	public function test_func(){
-		global $woocommerce;
-		$cart_totals = $woocommerce->cart->get_totals();
-		$cart_total = (float)$cart_totals['total'];
-		$min_total = (float)$this->min_checkout;
-		echo $cart_total . '<br>';
-		echo $min_total . '<br>';
-		echo $cart_total <= $min_total;
-	}
 	
 	public function init_form_fields() {
 		$this->form_fields = array(
