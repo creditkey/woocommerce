@@ -35,6 +35,9 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		$this->shared_secret = ( $this->testmode == 'yes' ) ? $this->get_option( 'test_shared_secret' ) : $this->get_option( 'shared_secret' );
 		$this->api_url       = ( $this->testmode == 'yes' ) ? 'https://staging.creditkey.com/app' : 'https://www.creditkey.com/app';
 		$this->logging       = $this->get_option( 'logging' );
+		$this->min_checkout  = ( $this->get_option( 'min_checkout' ) ) ? $this->get_option( 'min_checkout' ) : 0;
+		$this->min_product   = ( $this->get_option( 'min_product' ) ) ? $this->get_option( 'min_product' ) : 0;
+		$this->min_cart      = ( $this->get_option( 'min_cart' ) ) ? $this->get_option( 'min_cart' ) : 0;
 
 		// Save payment gateway settings
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
@@ -53,11 +56,22 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		add_filter( 'wc_order_statuses', array( $this, 'control_order_statuses' ), 10, 1 );
 		add_action('admin_enqueue_scripts', array($this, 'dashboard_payment_scripts'));
 
+		add_action('wp_footer', array($this, 'test_func'));
 	}
 
 	/**
 	 * Plugin options
 	 */
+
+	public function test_func(){
+		global $woocommerce;
+		$cart_totals = $woocommerce->cart->get_totals();
+		$cart_total = (float)$cart_totals['total'];
+		$min_total = (float)$this->min_checkout;
+		echo $cart_total . '<br>';
+		echo $min_total . '<br>';
+		echo $cart_total <= $min_total;
+	}
 	
 	public function init_form_fields() {
 		$this->form_fields = array(
@@ -82,6 +96,14 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'type'        => 'textarea',
 				'description' => esc_html__( 'This controls the description which the user sees during checkout.', 'credit_key' ),
 				'default'     => esc_html__( 'Pay the order via Secret Key payment gateway.', 'credit_key' ),
+			),
+
+			'min_checkout'      => array(
+				'title'       => esc_html__( 'Minimum threshold for displaying the payment method', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
+				'type'        => 'number',
+				'description' => '',
+				'default'     => 0
 			),
 
 			'is_test' => array(
@@ -147,12 +169,26 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'description' => '',
 				'default'     => 'no'
 			),
+			'min_product'      => array(
+				'title'       => esc_html__( 'Minimum threshold for displaying the promotional messaging on product pages', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
+				'type'        => 'number',
+				'description' => '',
+				'default'     => 0
+			),
 			'cart_page'      => array(
 				'title'       => esc_html__( 'Promotional Messaging on Cart Page', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
+			),
+			'min_cart'      => array(
+				'title'       => esc_html__( 'Minimum threshold for displaying the promotional messaging on the cart page', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
+				'type'        => 'number',
+				'description' => '',
+				'default'     => 0
 			),
 		);
 	}
@@ -220,11 +256,15 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 					}
 				}
 
+				$cart_totals = $woocommerce->cart->get_totals();
+				$cart_total = (float)$cart_totals['total'];
+				$min_total = (float)$this->min_checkout;
+
 				$customerId = $this->get_customer_id();
 
 				Api::configure( $this->api_url, $this->public_key, $this->shared_secret );
 				$is_displayed = Checkout::isDisplayedInCheckout( $cart_items, $customerId );
-				if ( ! $is_displayed ) {
+				if ( ! $is_displayed || $cart_total <= $min_total ) {
 					unset( $available_gateways['credit_key'] );
 				}
 			} catch ( Exception $e ) {
