@@ -13,19 +13,15 @@ jQuery(document).ready(function($){
         if( is_test ){
             $('#woocommerce_credit_key_public_key').parents('tr').hide();
             $('#woocommerce_credit_key_shared_secret').parents('tr').hide();
-            $('#woocommerce_credit_key_api_url').parents('tr').hide();
 
             $('#woocommerce_credit_key_test_public_key').parents('tr').show();
             $('#woocommerce_credit_key_test_shared_secret').parents('tr').show();
-            $('#woocommerce_credit_key_test_api_url').parents('tr').show();
         } else {
             $('#woocommerce_credit_key_public_key').parents('tr').show();
             $('#woocommerce_credit_key_shared_secret').parents('tr').show();
-            $('#woocommerce_credit_key_api_url').parents('tr').show();
 
             $('#woocommerce_credit_key_test_public_key').parents('tr').hide();
             $('#woocommerce_credit_key_test_shared_secret').parents('tr').hide();
-            $('#woocommerce_credit_key_test_api_url').parents('tr').hide();
         }
     }
 });
