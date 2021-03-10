@@ -23,6 +23,8 @@ class Main
         self::$plugin_path = plugin_dir_path(__FILE__);
         add_action('plugins_loaded', [$this, 'pluginsLoaded']);
         add_filter('woocommerce_payment_gateways', [$this, 'woocommercePaymentGateways']);
+        add_action('init', array($this, 'check_woocommerce_country'));
+	    add_action( 'admin_notices', array($this, 'error_notice') );
     }
 
     private function __clone()
@@ -31,6 +33,27 @@ class Main
 
     private function __wakeup()
     {
+    }
+
+    public function check_woocommerce_country(){
+	    $woo_countries = new \WC_Countries();
+	    $state = $woo_countries->get_base_state();
+	    $country = $woo_countries->get_base_country();
+	    if( $state != 'CA' || $country != 'US' ){
+		    deactivate_plugins(plugin_basename(__FILE__));
+        }
+    }
+
+    public function error_notice(){
+	    $woo_countries = new \WC_Countries();
+	    $state = $woo_countries->get_base_state();
+	    $country = $woo_countries->get_base_country();
+	    if( $state != 'CA' || $country != 'US' ){ ?>
+        <div class="error notice">
+            <p><?php _e( 'Woocommerce default country/state should be "United States - California" for activation Credit Key plugin', 'credit_key' ); ?></p>
+        </div>
+<?php
+        }
     }
 
     public function pluginsLoaded()
