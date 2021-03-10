@@ -44,7 +44,7 @@ class CreditKeyNotCheckoutPayment {
 			wp_enqueue_script( 'credit-key-scripts' );
 			wp_localize_script( 'credit-key-scripts', 'CreditKey', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 		}
-		if( is_product() || is_cart() || is_checkout() ){
+		if( is_product() || is_cart() ){
 			wp_enqueue_style( 'credit-key-styles', Main::$plugin_url . 'assets/css/styles.css' );
 		}
 

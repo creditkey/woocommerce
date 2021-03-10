@@ -17,7 +17,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 
 		$this->id                 = Main::$gateway_id;
 		$this->method_title       = esc_html__( 'Credit Key', 'credit_key' );
-		$this->method_description = esc_html__( 'Enable your customer to pay for your products through Credit Key.', 'credit_key' );
+		$this->method_description = esc_html__( 'Credit Key offers better business credit, in seconds, right at e-commerce checkout.', 'credit_key' );
 		$this->supports           = array( 'products', 'refunds' );
 		$this->order_button_text  = __( 'Continue with Credit Key', 'credit_key' );
 
@@ -26,7 +26,6 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 
 		// Load the settings.
 		$this->init_settings();
-		$this->title         = $this->get_option( 'title' );
 		$this->description   = $this->get_option( 'description' );
 		$this->enabled       = $this->get_option( 'enabled' );
 		$this->testmode      = 'yes' === $this->get_option( 'is_test' );
@@ -60,6 +59,8 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 
 		add_filter( 'woocommerce_gateway_icon', array($this, 'change_gateway_icon'), 10, 2 );
 
+		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+
 	}
 
 	/**
@@ -74,14 +75,6 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
-			),
-
-			'title'       => array(
-				'title'       => esc_html__( "Alt text for Gateway's icon on Checkout page", 'credit_key' ),
-				'type'        => 'text',
-				'description' => esc_html__( 'This controls the title which the user sees during checkout.', 'credit_key' ),
-				'default'     => esc_html__( 'Pay with Credit key', 'credit_key' ),
-				'desc_tip'    => true,
 			),
 			
 			'description' => array(
@@ -147,7 +140,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'desc_tip'    => false,
 			),
 			'product_page'    => array(
-				'title'       => esc_html__( 'Promotional Messaging on Product', 'credit_key' ),
+				'title'       => esc_html__( 'Promotional Messaging on Product pages', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'checkbox',
 				'description' => '',
@@ -157,7 +150,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'title'       => esc_html__( 'Minimum threshold for displaying the promotional messaging on product pages', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'number',
-				'description' => '',
+				'description' => 'Minimum threshold in USD',
 				'default'     => 0
 			),
 			'cart_page'      => array(
@@ -171,7 +164,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'title'       => esc_html__( 'Minimum threshold for displaying the promotional messaging on the cart page', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'number',
-				'description' => '',
+				'description' => 'Minimum threshold in USD',
 				'default'     => 0
 			),
 		);
@@ -195,6 +188,10 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 		}
 
 		return $customerId;
+	}
+
+	public function payment_scripts(){
+		wp_enqueue_style( 'credit-key-styles', Main::$plugin_url . 'assets/css/styles.css' );
 	}
 
 	public function lets_log( $e ) {
@@ -522,7 +519,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 
 	public function change_gateway_icon( $icon, $id ) {
 		if ( $id === $this->id ) {
-			return '<img src="' . Main::$plugin_url . 'assets/images/ck-checkout.png' . '" alt="' . $this->title . '"> ';
+			return '<img src="' . Main::$plugin_url . 'assets/images/ck-checkout.png' . '" alt="' . __('Pay with Credit key', 'credit_key') . '"> ';
 		} else {
 			return $icon;
 		}
