@@ -368,10 +368,10 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 	}
 
 	public function webhook() {
-		if ( isset( $_GET ) ) {
+		if ( isset( $_GET ) && isset($_GET['id']) && isset($_GET['order_id']) ) {
 
-			$ck_order_id = $_GET['id'];
-			$order_id    = $_GET['order_id'];
+			$ck_order_id = sanitize_text_field($_GET['id']);
+			$order_id    = sanitize_text_field($_GET['order_id']);
 			$order       = wc_get_order( $order_id );
 			update_post_meta( $order_id, 'ck_order_id', $ck_order_id );
 
