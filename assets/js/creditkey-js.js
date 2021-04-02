@@ -17969,7 +17969,7 @@
             var host = pdpHost(api, platform);
 
             var logo_url = function logo_url(s) {
-              return 'https://s3-us-west-2.amazonaws.com/creditkey-assets/sdk/ck-logo-white-' + s + '.svg';
+              return CreditKey.imagesPath + 'assets/images/ck-logo-white-' + s + '.svg';
             };
 
             var buttonClass;
@@ -18040,7 +18040,8 @@
             var host = pdpHost(api, platform);
 
             var btn_url = function btn_url(s) {
-              return 'https://s3-us-west-2.amazonaws.com/creditkey-assets/sdk/ck-btn-' + s + '.svg';
+              return CreditKey.imagesPath + 'assets/images/ck-btn-' + s + '.svg';
+
             };
 
             var learnMoreLink = slug !== '' ? slug : host + '/learn-more';
@@ -18052,9 +18053,9 @@
 
               case "pdp":
                 if (extra === 'static') {
-                  return "<div class=\"creditkey\" style=\"display: flex; align-items: center; cursor: pointer;\">\n            <div class=\"pdp-text\" style=\"margin: 0 5px;\">" + label + " with</div>\n            <img src=\"" + btn_url(size) + "\" class=\"payment-icon\" />\n            <a href=\"" + learnMoreLink + "\" target=\"_new\" style=\"display: " + (size === 'special' ? 'inline-block' : 'none') + ";\"><img src=\"https://s3-us-west-2.amazonaws.com/creditkey-assets/sdk/ck-info.png\" style=\"height: 19px !important;\" /></a>\n          </div>";
+                  return "<div class=\"creditkey\" style=\"display: flex; align-items: center; cursor: pointer;\">\n            <div class=\"pdp-text\" style=\"margin: 0 5px;\">" + label + " with</div>\n            <img src=\"" + btn_url(size) + "\" class=\"payment-icon\" />\n            <a href=\"" + learnMoreLink + "\" target=\"_new\" style=\"display: " + (size === 'special' ? 'inline-block' : 'none') + ";\"><img src=\"" + CreditKey.imagesPath + "assets/images/ck-info.png\" style=\"height: 19px !important;\" /></a>\n          </di  v>";
                 } else {
-                  return "<div class=\"creditkey\" style=\"display: flex; align-items: center; cursor: pointer;\">\n            <a href=\"" + host + "/apply/start/" + key + "\" target=\"_new\" style=\"margin: 0 5px;\" " + styles + "\"><div class=\"pdp-text\">" + label + " with</div></a>\n            <a href=\"" + host + "/apply/start/" + key + "\" target=\"_new\" style=\"" + styles + "\"><img src=\"" + btn_url(size) + "\" class=\"payment-icon\" /></a>\n            <a href=\"" + learnMoreLink + "\" target=\"_new\" style=\"display: " + (size === 'special' ? 'inline-block' : 'none') + ";\"><img src=\"https://s3-us-west-2.amazonaws.com/creditkey-assets/sdk/ck-info.png\" style=\"height: 19px !important;\" /></a>\n          </div>";
+                  return "<div class=\"creditkey\" style=\"display: flex; align-items: center; cursor: pointer;\">\n            <a href=\"" + host + "/apply/start/" + key + "\" target=\"_new\" style=\"margin: 0 5px;\" " + styles + "\"><div class=\"pdp-text\">" + label + " with</div></a>\n            <a href=\"" + host + "/apply/start/" + key + "\" target=\"_new\" style=\"" + styles + "\"><img src=\"" + btn_url(size) + "\" class=\"payment-icon\" /></a>\n            <a href=\"" + learnMoreLink + "\" target=\"_new\" style=\"display: " + (size === 'special' ? 'inline-block' : 'none') + ";\"><img src=\"" + CreditKey.imagesPath + "assets/images/ck-info.png\" style=\"height: 19px !important;\" /></a>\n          </div>";
                 }
 
                 break;
