@@ -76,25 +76,22 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 				'description' => '',
 				'default'     => 'no'
 			),
-			
 			'description' => array(
-				'title'       => esc_html__( 'Description', 'credit_key' ),
+				'title'       => esc_html__( 'Payment Method Description', 'credit_key' ),
 				'type'        => 'textarea',
-				'description' => esc_html__( 'This controls the description which the user sees during checkout.', 'credit_key' ),
+				'description' => esc_html__( 'Description under payment method in checkout.', 'credit_key' ),
 				'default'     => esc_html__( 'Pay the order via Secret Key payment gateway.', 'credit_key' ),
 			),
-
 			'min_checkout'      => array(
-				'title'       => esc_html__( 'Minimum threshold to display the Credit Key payment method in checkout.', 'credit_key' ),
+				'title'       => esc_html__( 'Minimum Order Amount', 'credit_key' ),
 				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
 				'type'        => 'number',
-				'description' => '',
+				'description' => 'The minimum order amount to offer Credit Key as a payment method in checkout.',
 				'default'     => 0
 			),
-
 			'is_test' => array(
-				'title'       => esc_html__( 'Test Mode/Live Mode', 'credit_key' ),
-				'label'       => esc_html__( 'Enable Test Mode/Disable Test Mode', 'credit_key' ),
+				'title'       => esc_html__( 'API Mode', 'credit_key' ),
+				'label'       => esc_html__( 'Staging', 'credit_key' ),
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
@@ -106,7 +103,7 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 			),
 
 			'test_public_key' => array(
-				'title' => esc_html__( 'Test Public Key', 'credit_key' ),
+				'title' => esc_html__( 'Public Key', 'credit_key' ),
 				'type'  => 'text',
 			),
 
@@ -116,56 +113,63 @@ class WC_Credit_Key extends WC_Payment_Gateway {
 			),
 
 			'test_shared_secret' => array(
-				'title' => esc_html__( 'Test Shared Secret', 'credit_key' ),
+				'title' => esc_html__( 'Shared Secret', 'credit_key' ),
 				'type'  => 'text',
 			),
-			
+			'product_page'    => array(
+				'title'       => esc_html__( 'Show Credit Key on product pages', 'credit_key' ),
+				'label'       => esc_html__( 'Show the Credit Key under price label in product pages', 'credit_key' ),
+				'type'        => 'checkbox',
+				'description' => '',
+				'default'     => 'no'
+			),
+			'min_product'      => array(
+				'title'       => esc_html__( 'Minimum Product Price', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
+				'type'        => 'number',
+				'description' => 'The minimum price for a product where the promotion should be displayed (in dollars).',
+				'default'     => 0
+			),
+			'cart_page'      => array(
+				'title'       => esc_html__( 'Show Credit Key on Cart Page', 'credit_key' ),
+				'label'       => esc_html__( 'Show the Credit Key under cart total on cart page', 'credit_key' ),
+				'type'        => 'checkbox',
+				'description' => '',
+				'default'     => 'no'
+			),
+			'min_cart'      => array(
+				'title'       => esc_html__( 'Minimum Cart Total', 'credit_key' ),
+				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
+				'type'        => 'number',
+				'description' => 'The minimum cart total where the promotion should be displayed (in dollars).',
+				'default'     => 0
+			),
+			'cart_alignment_desktop'  => array(
+				'title'       => 'Cart Page Alignment for Desktop',
+				'description' => 'Cart page text can be aligned left, centered, or right for desktop devices',
+				'type'        => 'select',
+				'options'     => array(
+					'right'   => 'Right',
+					'centered' => 'Centered',
+					'left'    => 'Left'
+				)
+			),
+			'cart_alignment_mobile'  => array(
+				'title'       => 'Cart Page Alignment for Mobile',
+				'description' => 'Cart page text can be aligned left, centered, or right for mobile devices',
+				'type'        => 'select',
+				'options'     => array(
+					'right'   => 'Right',
+					'centered' => 'Centered',
+					'left'    => 'Left'
+				)
+			),
 			'logging'      => array(
 				'title'       => esc_html__( 'Enable logging', 'credit_key' ),
 				'label'       => esc_html__( 'Enable/Disable', 'credit_key' ),
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
-			),
-			'button_display'  => array(
-				'title'       => 'Type of marketing display button',
-				'description' => 'Choose type of marketing display to retrieve',
-				'type'        => 'select',
-				'options'     => array(
-					'text_modal'       => 'Text with Modal',
-					'text_no_modal'    => 'Text without Modal',
-					'button_modal'     => 'Button with Modal',
-					'button_no_modal'  => 'Button without Modal',
-				),
-				'desc_tip'    => false,
-			),
-			'product_page'    => array(
-				'title'       => esc_html__( 'Promotional Messaging on Product pages', 'credit_key' ),
-				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
-				'type'        => 'checkbox',
-				'description' => '',
-				'default'     => 'no'
-			),
-			'min_product'      => array(
-				'title'       => esc_html__( 'Minimum threshold for displaying the promotional messaging on product pages', 'credit_key' ),
-				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
-				'type'        => 'number',
-				'description' => 'Minimum threshold in USD',
-				'default'     => 0
-			),
-			'cart_page'      => array(
-				'title'       => esc_html__( 'Promotional Messaging on Cart Page', 'credit_key' ),
-				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
-				'type'        => 'checkbox',
-				'description' => '',
-				'default'     => 'no'
-			),
-			'min_cart'      => array(
-				'title'       => esc_html__( 'Minimum threshold for displaying the promotional messaging on the cart page', 'credit_key' ),
-				'label'       => esc_html__( 'Show/Hide', 'credit_key' ),
-				'type'        => 'number',
-				'description' => 'Minimum threshold in USD',
-				'default'     => 0
 			),
 		);
 	}
