@@ -2,10 +2,10 @@
     text-decoration: none !important;
     line-height: 24px;
     text-align: center;
+    font-size: 15px !important;
 }
 .creditkey a:hover {
     cursor: pointer !important;
-    text-decoration: underline !important;
 }
 .creditkey .ck-modal.is-active {
     position: fixed;
@@ -27,4 +27,9 @@
 .payment_method_credit_key label img {
     max-height: unset !important;
     height: 24px !important;
+}
+
+.creditkey .payment-icon {
+height: 17px;
+margin-bottom: 2px;
 }

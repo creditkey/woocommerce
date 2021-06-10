@@ -67,59 +67,21 @@ class CreditKeyNotCheckoutPayment {
 	    if($show_on_product_page == 'yes' && $product_price >= $min_total && $active_plugin == 'yes') {
 		    switch ($button_type) {
 			    case 'text_no_modal':
-				    echo '<div id="pdp-no-modal"></div>';
-				    break;
-			    case 'button_modal':
-				    echo '<a href="#" onclick="launchModalPdp()"><div id="pdp-button-modal"></div></a>';
-				    break;
-			    case 'button_no_modal':
-				    echo '<div id="pdp-button-no-modal"></div>';
+				    echo '<div id="pdp"></div>';
 				    break;
 			    default:
-			        echo '<a href="#" onclick="launchModalPdp()"><div id="pdp-modal"></div></a>';
-				    echo '<div id="modal-pdp"></div>';
+				    echo '<div id="pdp"></div>';
 		    }
 
-		    $staging    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
+		    $environment    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
 		    $public_key = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
 ?>
             <script type="text/javascript">
-                let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $staging; ?>');
+                let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $environment; ?>');
                 let charges = new ck.Charges(<?php echo $product_price; ?>, 0, 0 , 0, <?php echo $product_price; ?>);
-            <?php
-                switch ($button_type) {
-                    case 'text_no_modal': ?>
-                        let pdp = document.getElementById('pdp-no-modal');
-                        client.get_marketing_display(charges, 'pdp', 'text', 'special')
-                            .then(res => pdp.innerHTML = res);
-            <?php
-                        break;
-                    case 'button_modal': ?>
-                        let pdp_button_modal = document.getElementById('pdp-button-modal');
-                        client.get_marketing_display(charges, 'pdp', 'button', 'medium', 'static')
-                            .then(res => pdp_button_modal.innerHTML = res);
-                        function launchModalPdp() {
-                            console.log(client);
-                            client.enhanced_pdp_modal(charges);
-                        }
-            <?php
-                        break;
-                    case 'button_no_modal': ?>
-                        let pdp_button = document.getElementById('pdp-button-no-modal');
-                        client.get_marketing_display(charges, 'pdp', 'button', 'medium')
-                            .then(res => pdp_button.innerHTML = res);
-            <?php
-                        break;
-                    default: ?>
-                        let pdp_modal = document.getElementById('pdp-modal');
-                        client.get_marketing_display(charges, 'pdp', 'text', 'special', 'static')
-                            .then(res => pdp_modal.innerHTML = res);
-                    function launchModalPdp() {
-                        console.log(client);
-                        client.enhanced_pdp_modal(charges);
-                    }
-            <?php
-                } ?>
+
+                pdp.innerHTML = client.get_pdp_display(charges);
+           		
             </script>
 		    <?php
         }
@@ -134,15 +96,22 @@ class CreditKeyNotCheckoutPayment {
 		$cart_totals = $woocommerce->cart->get_totals();
 		$cart_total = (float)$cart_totals['total'];
 		$min_total = $gateway_settings['min_cart'];
+		$cart_alignment_desktop = "'" . $gateway_settings['cart_alignment_desktop'] . "'";
+		$cart_alignment_mobile = "'" . $gateway_settings['cart_alignment_mobile'] . "'" ;
 
 		if($show_on_cart_page == 'yes' && $cart_total >= $min_total && $active_plugin == 'yes'){
-			$staging    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
+			$environment    = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
 			$public_key = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
-            include_once Main::$plugin_path . 'template-parts/cart-button.php';
-            echo '<div id="modal-pdp"></div>';
-?>
+
+            echo '<div id="cartbanner"></div>'; ?>
+
             <script type="text/javascript">
-                let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $staging; ?>');
+                let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $environment; ?>');
+
+                let charges = new ck.Charges(<?php echo $cart_total; ?>, 0, 0 , 0, <?php echo $cart_total; ?>);
+				cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
+				console.log(<?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
+
             </script>
 			<?php
 		}

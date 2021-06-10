@@ -4,7 +4,22 @@ Tags: creditkey, ecommerce, payment gateway, woocommerce
 Tested up to: 5.7
 Stable tag: 1.0.0
 
-Enable your customer to pay for your products through Credit Key.
+Realtime B2B credit dramatically boosts order amounts and order volume. Credit Key's proprietary B2B underwriting process allows us to uniquely identify and immediately score businesses, extending deeper credit to your customers at the moment of purchase.
+
+https://vimeo.com/545953699
+
+***FINANCING ONLY AVAILABLE TO US BUSINESSES***
+
+
+**Get paid. Now.**
+Get paid immediately instead of waiting for customers to pay with trade credit.
+
+**You don't have to be a bank.**
+Credit Key factors all invoices, and assumes all risk, so you can focus on your business instead.
+
+**Boost your revenue.**
+Credit Key's payment flexibility results in more orders, larger transactions, and happier customers.
+
 
 == Installation ==
 AUTOMATIC INSTALLATION:
