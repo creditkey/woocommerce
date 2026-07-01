@@ -39,7 +39,7 @@ class Main
         $country = $woo_countries->get_base_country();
         if ( $country != 'US' ) { ?>
             <div class="error notice">
-                <p><?php _e('Credit Key requiers "United States" to be a default country.', 'credit_key'); ?></p>
+                <p><?php _e('Credit Key requires "United States" to be the default country.', 'credit_key'); ?></p>
             </div>
             <?php
         }
