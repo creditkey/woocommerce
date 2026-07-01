@@ -41,7 +41,7 @@ jQuery(document).ready(function ($) {
 
                     if( ckContainer ) {
                         ckContainer.scrolling = '';
-                        setInterval(() => ckContainer.style.height = 'calc(100vh - 100px)') //fux bug with modal height
+                        setInterval(() => { ckContainer.style.height = 'calc(100vh - 100px)'; }, 250); // Fix modal iframe height
                     }
 
                 } else {
