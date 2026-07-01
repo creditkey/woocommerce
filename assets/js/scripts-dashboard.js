@@ -8,6 +8,7 @@ jQuery(document).ready(function($){
         snow_plugin_options(is_test);
     });
     
+    if ( document.getElementById( 'woocommerce_credit_key_promo_message' ) ) {
     wp.editor.initialize('woocommerce_credit_key_promo_message', {
         tinymce: {
 		wpautop  : true,
@@ -54,6 +55,7 @@ jQuery(document).ready(function($){
         quicktags: true,
         mediaButtons: true
     });
+    }
     
     function snow_plugin_options(is_test){
         if( is_test ){
