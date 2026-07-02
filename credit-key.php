@@ -79,7 +79,7 @@ class Main
             require_once 'sdk/Orders.php';
             require_once 'includes/class-wc-credit-key-gateway.php';
             require_once 'includes/class-wc-credit-key-js-gateway.php';
-            require_once 'includes/class-wc-credit-key-promotion.php';
+            // require_once 'includes/class-wc-credit-key-promotion.php';
             require_once 'includes/class-wc-credit-key-modal-mode.php';
             // Blocks integration is registered in constructor via registerBlocksIntegration().
 
