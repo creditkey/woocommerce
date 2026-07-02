@@ -41,7 +41,8 @@ jQuery(document).ready(function ($) {
 
                     if( ckContainer ) {
                         ckContainer.scrolling = '';
-                        setInterval(() => { ckContainer.style.height = 'calc(100vh - 100px)'; }, 250); // Fix modal iframe height
+                        const interval = setInterval(() => { ckContainer.style.height = 'calc(100vh - 100px)'; }, 250); // Fix modal iframe height
+                        setTimeout(() => clearInterval(interval), 5000);
                     }
 
                 } else {
