@@ -6,6 +6,9 @@ jQuery(document).ready(function ($) {
         }
         var data = new FormData();
         data.append('action', 'get_cart_data');
+        if (CreditKey && CreditKey.nonce) {
+            data.append('nonce', CreditKey.nonce);
+        }
         $.ajax({
             url: CreditKey.ajax_url,
             type: 'post',
