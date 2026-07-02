@@ -8,7 +8,7 @@ namespace CreditKey;
  * Author: Credit Key
  * Author URI: https://www.creditkey.com
  * Version: 2.2
- * Text Domain: credit-key-payment-gateway
+ * Text Domain: credit_key
  * WC tested up to: 10.5.3
  * WC requires at least: 8.4
  */
@@ -79,6 +79,8 @@ class Main
             require_once 'sdk/Orders.php';
             require_once 'includes/class-wc-credit-key-gateway.php';
             require_once 'includes/class-wc-credit-key-js-gateway.php';
+            require_once 'includes/class-wc-credit-key-promotion.php';
+            require_once 'includes/class-wc-credit-key-modal-mode.php';
             // Blocks integration is registered in constructor via registerBlocksIntegration().
 
             $this->classesLoaded = true;

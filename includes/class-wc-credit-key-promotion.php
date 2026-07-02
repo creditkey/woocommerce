@@ -2,9 +2,9 @@
 
 namespace CreditKey;
 
-class CreditKeyPromition
+class CreditKeyPromotion
 {
-    private static ?CreditKeyPromition $instance = null;
+    private static ?CreditKeyPromotion $instance = null;
 	public string $gateway_id;
 	/**
 	 * @var false|mixed|void
@@ -98,10 +98,10 @@ class CreditKeyPromition
                 
                 <?php if (! empty($gateway_settings['promo_message_product_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $('<?php echo $gateway_settings['promo_message_product_selector'] ?>').append(client.get_pdp_display(charges));
+                    $(<?php echo wp_json_encode($gateway_settings['promo_message_product_selector']); ?>).append(client.get_pdp_display(charges));
                 });
                 <?php else: ?>
-                pdp.innerHTML = client.get_pdp_display(charges);
+                document.getElementById('pdp').innerHTML = client.get_pdp_display(charges);
                 <?php endif; ?>
             </script>
             <?php
@@ -135,10 +135,10 @@ class CreditKeyPromition
                 let charges = new ck.Charges(<?php echo $cart_total; ?>, 0, 0, 0, <?php echo $cart_total; ?>);
                 <?php if (! empty($gateway_settings['promo_message_cart_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $('<?php echo $gateway_settings['promo_message_cart_selector'] ?>').append(client.get_pdp_display(charges));
+                    $(<?php echo wp_json_encode($gateway_settings['promo_message_cart_selector']); ?>).append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>));
                 });
                 <?php else: ?>
-                cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
+                document.getElementById('cartbanner').innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
                 <?php endif; ?>
             </script>
             <?php
@@ -163,4 +163,4 @@ class CreditKeyPromition
     }
 }
 
-CreditKeyPromition::getInstance();
+CreditKeyPromotion::getInstance();

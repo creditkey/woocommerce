@@ -47,7 +47,7 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
                 'title'       => $title,
                 'description' => $description,
                 'isEligible'  => $is_eligible,
-                'icon'        => Main::$plugin_url . 'assets/images/8da7cc1-Credit-key-payment-method.svg',
+                'icon'        => Main::$plugin_url . 'assets/images/credit-key-payment-method-new-logo.svg',
             ];
         }
 

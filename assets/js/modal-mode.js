@@ -28,7 +28,7 @@ jQuery(document).ready(function ($) {
         $.ajax({
             method: 'POST',
             dataType: 'json',
-            url: '/?wc-ajax=checkout&get_modal_data=1',
+            url: (typeof wc_checkout_params !== 'undefined' ? wc_checkout_params.wc_ajax_url.replace('%%endpoint%%', 'checkout') : '/?wc-ajax=checkout') + '&get_modal_data=1',
             data: $form.serialize(),
             beforeSend: function (xhr) {
 

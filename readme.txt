@@ -47,7 +47,7 @@ Simple, fast setup—get approved as a Credit Key merchant and then seamlessly e
 AUTOMATIC INSTALLATION:
 1) Go to «Plugins > Add New»
 2) In the search box type Credit Key Payment Gateway
-3) From the search result you will see Credit Key Payment Gateway click on th button \"Install Now\" to install the plugin
+3) From the search result you will see Credit Key Payment Gateway click on the button \"Install Now\" to install the plugin
 4) A popup window will ask you to confirm your wish to install the Plugin.
 5) After installation, activate the plugin.
 6) Open the settings page for WooCommerce and click the «Payments» tab.

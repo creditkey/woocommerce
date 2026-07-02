@@ -1,6 +1,9 @@
 jQuery(document).ready(function ($) {
     $('body').on('click', '#ck-cart-link', function (e) {
         e.preventDefault();
+        if (typeof ck === 'undefined' || typeof client === 'undefined') {
+            return;
+        }
         var data = new FormData();
         data.append('action', 'get_cart_data');
         $.ajax({
@@ -35,8 +38,14 @@ jQuery(document).ready(function ($) {
             if (current_amount != amount) {
                 price = price.replace(/\s/g, '');
                 current_amount = amount;
+                if (typeof ck === 'undefined' || typeof client === 'undefined') {
+                    return;
+                }
                 let charges = new ck.Charges(price, 0, 0, 0, price);
-                pdp.innerHTML = client.get_pdp_display(charges);
+                var pdp = document.getElementById('pdp');
+                if (pdp) {
+                    pdp.innerHTML = client.get_pdp_display(charges);
+                }
             }
     
         });
