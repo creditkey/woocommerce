@@ -149,13 +149,16 @@ class CreditKeyNotCheckoutPayment
         $show_on_cart_page = (isset($gateway_settings['cart_page'])) ? $gateway_settings['cart_page'] : 'no';
         $active_plugin     = (isset($gateway_settings['enabled'])) ? $gateway_settings['enabled'] : 'no';
         
-        $cart_totals            = $woocommerce->cart->get_totals();
-        $cart_total             = (float)$cart_totals['total'];
-        $min_total              = $gateway_settings['min_cart'];
-        $gateway_settings['cart_alignment_desktop'] = $gateway_settings['cart_alignment_desktop'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_desktop'];
-        $gateway_settings['cart_alignment_mobile'] = $gateway_settings['cart_alignment_mobile'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_mobile'];
-        $cart_alignment_desktop = "'" . $gateway_settings['cart_alignment_desktop'] . "'";
-        $cart_alignment_mobile  = "'" . $gateway_settings['cart_alignment_mobile'] . "'";
+        $cart_totals = ($woocommerce && $woocommerce->cart) ? $woocommerce->cart->get_totals() : ['total' => 0];
+        $cart_total  = isset($cart_totals['total']) ? (float) $cart_totals['total'] : 0.0;
+        $min_total   = isset($gateway_settings['min_cart']) ? (float) $gateway_settings['min_cart'] : 0.0;
+
+        $desktop_align = $gateway_settings['cart_alignment_desktop'] ?? 'right';
+        $mobile_align  = $gateway_settings['cart_alignment_mobile'] ?? 'right';
+        $desktop_align = ($desktop_align === 'centered') ? 'center' : $desktop_align;
+        $mobile_align  = ($mobile_align === 'centered') ? 'center' : $mobile_align;
+        $cart_alignment_desktop = "'" . $desktop_align . "'";
+        $cart_alignment_mobile  = "'" . $mobile_align . "'";
         
         if ($show_on_cart_page == 'yes' && $cart_total >= $min_total && $active_plugin == 'yes') {
             $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
