@@ -72,6 +72,7 @@ class CreditKeyNotCheckoutPayment
 
         wp_localize_script('credit-key-scripts', 'CreditKey', array(
             'ajax_url'             => admin_url('admin-ajax.php'),
+            'nonce'                => wp_create_nonce('credit_key_cart_data'),
             'imagesPath'           => Main::$plugin_url,
             'cartEnabled'          => $show_on_cart_page,
             'publicKey'            => $public_key,
