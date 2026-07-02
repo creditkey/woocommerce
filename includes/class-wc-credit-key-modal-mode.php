@@ -40,7 +40,7 @@ class CreditKeyModalMode {
 		wp_enqueue_script( 'credit-key-modal-mode', Main::$plugin_url . 'assets/js/modal-mode.js', array(
 			'jquery',
 			'credit-key-js'
-		), time() );
+		), ( defined('WP_DEBUG') && WP_DEBUG ) ? time() : '2.2' );
 
 		wp_localize_script( 'credit-key-modal-mode', 'creditKeyModalModeData', array(
 			'gateway_id' => $this->gateway_id,
