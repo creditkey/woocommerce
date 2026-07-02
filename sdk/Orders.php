@@ -66,7 +66,11 @@
             if (!is_null($shippingAddress))
                 $formData['shipping_address'] = $shippingAddress->toFormData();
 
-            self::log('orders.update.request', [ 'payload' => $formData ]);
+            $logFormData = $formData;
+            if (isset($logFormData['shipping_address'])) {
+                $logFormData['shipping_address'] = '[redacted]';
+            }
+            self::log('orders.update.request', [ 'payload' => $logFormData ]);
 
             try {
                 $result = \CreditKey\Api::post('/ecomm/update_order', $formData);
