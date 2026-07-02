@@ -127,7 +127,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 'title'       => esc_html__('Payment Method Description', 'credit_key'),
                 'type'        => 'textarea',
                 'description' => esc_html__('Description under payment method in checkout.', 'credit_key'),
-                'default'     => esc_html__('Pay the order via Secret Key payment gateway.', 'credit_key'),
+                'default'     => esc_html__('Pay the order via Credit Key payment gateway.', 'credit_key'),
             ],
             'min_checkout' => [
                 'title'       => esc_html__('Minimum Order Amount', 'credit_key'),
