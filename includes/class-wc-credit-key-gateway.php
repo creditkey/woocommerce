@@ -736,12 +736,15 @@ class WC_Credit_Key extends WC_Payment_Gateway
 	 * @return string
 	 */
     public static function get_sequential_order_number($order_id) {
-        if(function_exists( 'wc_sequential_order_numbers' )){
+        if (function_exists('wc_sequential_order_numbers')) {
             $order = wc_get_order($order_id);
-            return $order->get_meta( '_order_number', true, 'edit' );
+            $seq = $order ? $order->get_meta('_order_number', true, 'edit') : '';
+            if (!empty($seq)) {
+                return (string) $seq;
+            }
         }
 
-        return strval($order_id);
+        return (string) $order_id;
     }
 
     public function prevent_unauthorized_status_change($order_id, $old_status, $new_status, $order) {
