@@ -58,7 +58,8 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
 
             // Minimum order amount check.
             $min_total  = isset( $this->settings['min_checkout'] ) ? (float) $this->settings['min_checkout'] : 0;
-            $cart_total = (float) WC()->cart->get_totals()['total'];
+            $totals = WC()->cart->get_totals();
+            $cart_total = isset( $totals['total'] ) ? (float) $totals['total'] : 0;
             if ( $cart_total <= $min_total ) {
                 return false;
             }
