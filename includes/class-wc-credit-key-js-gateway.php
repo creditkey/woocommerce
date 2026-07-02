@@ -180,6 +180,7 @@ class CreditKeyNotCheckoutPayment
     
     public function get_cart_data_handler()
     {
+        check_ajax_referer('credit_key_cart_data', 'nonce');
         $cart_totals         = WC()->cart->get_totals();
         $cart_subtotal       = number_format($cart_totals['subtotal'],  2, '.', '' );
         $cart_tax_total      = number_format($cart_totals['total_tax'],  2, '.', '' );
