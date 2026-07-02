@@ -61,7 +61,12 @@
             if (banner) {
                 return banner;
             }
-            var target = document.querySelector(selector);
+            var target = null;
+            try {
+                target = document.querySelector(selector);
+            } catch (e) {
+                target = document.querySelector('.wc-block-cart__submit');
+            }
             if (!target || !target.parentNode) {
                 return null;
             }
