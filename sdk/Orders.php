@@ -41,7 +41,11 @@
 
             try {
                 $result = \CreditKey\Api::post('/ecomm/confirm_order', $payload);
-                self::log('orders.confirm.response', [ 'result' => $result ]);
+                $logResult = is_array($result) ? $result : [];
+                if (isset($logResult['shipping_address'])) {
+                    $logResult['shipping_address'] = '[redacted]';
+                }
+                self::log('orders.confirm.response', [ 'result' => $logResult ]);
                 return Order::fromServiceData($result);
             } catch (\Throwable $e) {
                 self::log('orders.confirm.error', [ 'error' => $e->getMessage() ]);
@@ -74,7 +78,11 @@
 
             try {
                 $result = \CreditKey\Api::post('/ecomm/update_order', $formData);
-                self::log('orders.update.response', [ 'result' => $result ]);
+                $logResult = is_array($result) ? $result : [];
+                if (isset($logResult['shipping_address'])) {
+                    $logResult['shipping_address'] = '[redacted]';
+                }
+                self::log('orders.update.response', [ 'result' => $logResult ]);
                 return Order::fromServiceData($result);
             } catch (\Throwable $e) {
                 self::log('orders.update.error', [ 'error' => $e->getMessage() ]);

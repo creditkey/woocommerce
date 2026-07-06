@@ -4,9 +4,12 @@ jQuery(document).ready(function ($) {
         if (typeof ck === 'undefined' || typeof client === 'undefined') {
             return;
         }
+        if (typeof CreditKey === 'undefined') {
+            return;
+        }
         var data = new FormData();
         data.append('action', 'get_cart_data');
-        if (CreditKey && CreditKey.nonce) {
+        if (CreditKey.nonce) {
             data.append('nonce', CreditKey.nonce);
         }
         $.ajax({
