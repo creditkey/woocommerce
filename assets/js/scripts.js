@@ -20,12 +20,14 @@ jQuery(document).ready(function ($) {
             contentType: false,
             dataType: 'json',
             success: function (data) {
+                if (typeof ck === 'undefined' || typeof client === 'undefined') {
+                    return;
+                }
                 let cart_subtotal = Number(data.cart_subtotal);
                 let cart_tax_total = Number(data.cart_tax_total);
                 let cart_discount_total = Number(data.cart_discount_total);
                 let cart_shipping_total = Number(data.cart_shipping_total);
                 let cart_total = Number(data.cart_total);
-                let modalPdp = document.getElementById('modal-pdp');
                 let charges = new ck.Charges(cart_subtotal, cart_shipping_total, cart_tax_total, cart_discount_total, cart_total);
                 client.enhanced_pdp_modal(charges);
             },
