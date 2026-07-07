@@ -80,6 +80,7 @@ class Main
             require_once 'includes/class-wc-credit-key-gateway.php';
             require_once 'includes/class-wc-credit-key-js-gateway.php';
             require_once 'includes/class-wc-credit-key-modal-mode.php';
+            require_once 'includes/class-wc-credit-key-promotion.php';
             // Blocks integration is registered in constructor via registerBlocksIntegration().
 
             $this->classesLoaded = true;
