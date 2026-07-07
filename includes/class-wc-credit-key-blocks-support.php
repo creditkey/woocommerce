@@ -30,7 +30,7 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
                 'wc-credit-key-blocks',
                 Main::$plugin_url . 'assets/js/credit-key-blocks.js',
                 [ 'wc-settings', 'wc-blocks-registry', 'wp-element', 'wp-i18n' ],
-                defined('WP_DEBUG') && WP_DEBUG ? time() : '1.0.0',
+                filemtime( Main::$plugin_path . 'assets/js/credit-key-blocks.js' ),
                 true
             );
 
@@ -38,16 +38,15 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
         }
 
         public function get_payment_method_data() {
-            $title       = isset( $this->settings['title'] ) ? $this->settings['title'] : __( 'Credit Key', 'credit_key' );
             $description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 
             $is_eligible = $this->is_checkout_eligible();
 
             return [
-                'title'       => $title,
-                'description' => $description,
-                'isEligible'  => $is_eligible,
-                'icon'        => Main::$plugin_url . 'assets/images/credit-key-payment-method-new-logo.svg',
+                'description'           => $description,
+                'isEligible'            => $is_eligible,
+                'icon'                  => Main::$plugin_url . 'assets/images/credit-key-payment-method-new-logo.svg',
+                'placeOrderButtonLabel' => __( 'Continue with Credit Key', 'credit_key' ),
             ];
         }
 
@@ -91,5 +90,3 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
         }
     }
 }
-
-

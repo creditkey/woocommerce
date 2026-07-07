@@ -65,7 +65,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         // Load the settings.
         $this->init_settings();
-        $this->title         = $this->get_option('title');
+        $this->title         = '';
         $this->description   = $this->get_option('description');
         $this->enabled       = $this->get_option('enabled');
         $this->testmode      = ('yes' === $this->get_option('is_test'));
@@ -115,13 +115,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 'type'        => 'checkbox',
                 'description' => '',
                 'default'     => 'no'
-            ],
-            'title'        => [
-                'title'       => __('Title', 'credit_key'),
-                'type'        => 'text',
-                'description' => __('This controls the title for the payment method the customer sees during checkout.', 'credit_key'),
-                'default'     => __('Credit Key Payment', 'credit_key'),
-                'desc_tip'    => true,
             ],
             'description'  => [
                 'title'       => esc_html__('Payment Method Description', 'credit_key'),
@@ -264,7 +257,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
     public function payment_scripts()
     {
-        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css');
+        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css', [], filemtime(Main::$plugin_path . 'assets/css/styles.css'));
     }
 
     public function lets_log($e)

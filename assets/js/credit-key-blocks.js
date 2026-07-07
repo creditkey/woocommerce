@@ -8,17 +8,22 @@
         return;
     }
 
+    const fallbackTitle = 'Credit Key';
+    const placeOrderButtonLabel = settings.placeOrderButtonLabel || 'Continue with Credit Key';
+
     const Label = () => {
-        const children = [ settings.title || 'Credit Key' ];
         if ( settings.icon ) {
-            children.push(
+            return wp.element.createElement(
+                'span',
+                { className: 'ck-label ck-label--image-only' },
                 wp.element.createElement(
                     'img',
-                    { key: 'ck-icon', src: settings.icon, alt: settings.title || 'Credit Key', className: 'ck-block-icon' }
+                    { src: settings.icon, alt: fallbackTitle, className: 'ck-block-icon' }
                 )
             );
         }
-        return wp.element.createElement( 'span', { className: 'ck-label' }, children );
+
+        return wp.element.createElement( 'span', { className: 'ck-label' }, fallbackTitle );
     };
 
     const Content = () => {
@@ -31,12 +36,11 @@
         content: wp.element.createElement( Content ),
         edit: wp.element.createElement( Content ),
         canMakePayment: () => !! settings.isEligible,
-        ariaLabel: settings.title || 'Credit Key',
-        icons: settings.icon ? [ settings.icon ] : [],
+        ariaLabel: fallbackTitle,
+        placeOrderButtonLabel,
+        icons: [],
         supports: {
             features: [ 'products', 'refunds' ]
         },
     } );
 } )();
-
-

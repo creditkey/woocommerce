@@ -35,7 +35,8 @@
         var mobile = cfg.cartAlignmentMobile || 'center';
         var client = new ck.Client(cfg.publicKey, cfg.environment);
         var bannerId = 'ck-cart-block-banner';
-        var lastTotal = null;
+        var lastSignature = null;
+        var pendingTotalsRequest = false;
 
         // Read the grand total (major units) from the WooCommerce Blocks store.
         function getCartTotal() {
@@ -56,6 +57,50 @@
             return parseInt(totals.total_price, 10) / Math.pow(10, minorUnit);
         }
 
+        function fetchCartTotals(callback) {
+            var request = new XMLHttpRequest();
+            var data = new FormData();
+
+            data.append('action', 'get_cart_data');
+
+            if (cfg.nonce) {
+                data.append('nonce', cfg.nonce);
+            }
+
+            request.open('POST', cfg.ajax_url, true);
+            request.onreadystatechange = function () {
+                if (request.readyState !== 4) {
+                    return;
+                }
+
+                if (request.status < 200 || request.status >= 300) {
+                    callback(null);
+                    return;
+                }
+
+                try {
+                    callback(JSON.parse(request.responseText));
+                } catch (e) {
+                    callback(null);
+                }
+            };
+            request.send(data);
+        }
+
+        function normalizeTotals(totals) {
+            if (!totals) {
+                return null;
+            }
+
+            return {
+                subtotal: Number(totals.cart_subtotal),
+                tax: Number(totals.cart_tax_total),
+                discount: Number(totals.cart_discount_total),
+                shipping: Number(totals.cart_shipping_total),
+                total: Number(totals.cart_total),
+            };
+        }
+
         function getBanner() {
             var banner = document.getElementById(bannerId);
             if (banner) {
@@ -72,31 +117,71 @@
             }
             banner = document.createElement('div');
             banner.id = bannerId;
-            target.parentNode.insertBefore(banner, target);
+
+            if (cfg.cartSelector) {
+                target.appendChild(banner);
+            } else {
+                target.parentNode.insertBefore(banner, target);
+            }
+
             return banner;
         }
 
         function render() {
-            var total = getCartTotal();
-            if (total === null) {
+            if (pendingTotalsRequest) {
                 return;
             }
+
             var banner = getBanner();
             if (!banner) {
                 return;
             }
-            if (total < minCart) {
-                banner.innerHTML = '';
-                lastTotal = total;
-                return;
-            }
-            // Skip re-render when nothing changed and the banner is still mounted.
-            if (total === lastTotal && banner.innerHTML) {
-                return;
-            }
-            lastTotal = total;
-            var charges = new ck.Charges(total, 0, 0, 0, total);
-            banner.innerHTML = client.get_cart_display(charges, desktop, mobile);
+
+            pendingTotalsRequest = true;
+            fetchCartTotals(function (cartTotals) {
+                var totals = normalizeTotals(cartTotals);
+
+                pendingTotalsRequest = false;
+
+                if (!totals) {
+                    var total = getCartTotal();
+
+                    if (total === null) {
+                        return;
+                    }
+
+                    totals = {
+                        subtotal: total,
+                        tax: 0,
+                        discount: 0,
+                        shipping: 0,
+                        total: total,
+                    };
+                }
+
+                if (totals.total < minCart) {
+                    banner.innerHTML = '';
+                    lastSignature = null;
+                    return;
+                }
+
+                var signature = [
+                    totals.subtotal,
+                    totals.shipping,
+                    totals.tax,
+                    totals.discount,
+                    totals.total,
+                ].join('|');
+
+                // Skip re-render when nothing changed and the banner is still mounted.
+                if (signature === lastSignature && banner.innerHTML) {
+                    return;
+                }
+
+                lastSignature = signature;
+                var charges = new ck.Charges(totals.subtotal, totals.shipping, totals.tax, totals.discount, totals.total);
+                banner.innerHTML = client.get_cart_display(charges, desktop, mobile);
+            });
         }
 
         // Coalesce the frequent store/DOM notifications into one render per frame.

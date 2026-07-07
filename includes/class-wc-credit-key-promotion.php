@@ -59,7 +59,7 @@ class CreditKeyPromotion
                 'imagesPath' => Main::$plugin_url
             ));
 
-	        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css');
+	        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css', [], filemtime(Main::$plugin_path . 'assets/css/styles.css'));
         }
     }
     

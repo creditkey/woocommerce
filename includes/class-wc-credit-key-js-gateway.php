@@ -94,7 +94,7 @@ class CreditKeyNotCheckoutPayment
             wp_enqueue_script('credit-key-cart-block');
         }
 
-        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css');
+        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css', [], filemtime(Main::$plugin_path . 'assets/css/styles.css'));
     }
     
     public function add_credit_key_button()
