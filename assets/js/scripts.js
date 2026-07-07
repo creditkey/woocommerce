@@ -36,15 +36,16 @@ jQuery(document).ready(function ($) {
 
     var current_amount = $('.price-rule-active').data('price-rules-amount');
     var price_table = $('.price-rules-table');
-    
-    if (price_table.length) {
-        $('.qty').change(function () {
-    
+    const pdp = document.getElementById('pdp');
+
+    if (price_table.length && pdp && typeof ck !== 'undefined' && typeof client !== 'undefined') {
+        $('.qty').on('change', function () {
+
             let price = $('.price-rule-active').data('price-rules-price');
             let amount = $('.price-rule-active').data('price-rules-amount');
-    
-            if (current_amount != amount) {
-                price = price.replace(/\s/g, '');
+
+            if (current_amount != amount && price != null) {
+                price = String(price).replace(/\s/g, '');
                 current_amount = amount;
                 if (typeof ck === 'undefined' || typeof client === 'undefined') {
                     return;
@@ -55,7 +56,7 @@ jQuery(document).ready(function ($) {
                     pdp.innerHTML = client.get_pdp_display(charges);
                 }
             }
-    
+
         });
     }
     
