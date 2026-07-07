@@ -29,7 +29,7 @@ jQuery(document).ready(function ($) {
                 let cart_shipping_total = Number(data.cart_shipping_total);
                 let cart_total = Number(data.cart_total);
                 let charges = new ck.Charges(cart_subtotal, cart_shipping_total, cart_tax_total, cart_discount_total, cart_total);
-                client.enhanced_pdp_modal(charges);
+                if (typeof client !== 'undefined' && client) { client.enhanced_pdp_modal(charges); }
             },
         });
     });
