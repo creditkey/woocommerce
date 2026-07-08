@@ -680,47 +680,65 @@ class WC_Credit_Key extends WC_Payment_Gateway
     public function control_order_statuses($wc_statuses_arr)
     {
         global $pagenow;
+
+        $order_id = null;
+
         if (is_admin() && $pagenow == 'post.php' && get_post_type() == 'shop_order') {
-            $order_id       = get_the_ID();
-            $order          = wc_get_order($order_id);
-            $payment_method = $order->get_payment_method();
+            $order_id = get_the_ID();
+        } elseif (
+            is_admin() &&
+            $pagenow === 'admin.php' &&
+            isset($_GET['page']) && $_GET['page'] === 'wc-orders' &&
+            isset($_GET['action']) && $_GET['action'] === 'edit' &&
+            isset($_GET['id'])
+        ) {
+            $order_id = absint($_GET['id']);
+        }
 
-            if ($payment_method == $this->id) {
+        if (!$order_id) {
+            return $wc_statuses_arr;
+        }
 
-                $is_confirmed = $order->get_meta('ck_is_confirmed', true);
-                $is_refunded  = $order->get_meta('ck_is_refunded', true);
-                $is_cancelled = $order->get_meta('ck_is_cancelled', true);
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return $wc_statuses_arr;
+        }
 
-                if ($order->get_status() === 'cancelled') {
-                    $is_cancelled = true;
-                }
+        $payment_method = $order->get_payment_method();
 
-                if ($is_confirmed && !$is_refunded && !$is_cancelled) {
-                    foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key != 'wc-completed' && $status_key != 'wc-cancelled' && $status_key != 'wc-refunded') {
-                            unset($wc_statuses_arr[$status_key]);
-                        }
+        if ($payment_method == $this->id) {
+
+            $is_confirmed = $order->get_meta('ck_is_confirmed', true);
+            $is_refunded  = $order->get_meta('ck_is_refunded', true);
+            $is_cancelled = $order->get_meta('ck_is_cancelled', true);
+
+            if ($order->get_status() === 'cancelled') {
+                $is_cancelled = true;
+            }
+
+            if ($is_confirmed && !$is_refunded && !$is_cancelled) {
+                foreach ($wc_statuses_arr as $status_key => $status) {
+                    if ($status_key != 'wc-completed' && $status_key != 'wc-cancelled' && $status_key != 'wc-refunded') {
+                        unset($wc_statuses_arr[$status_key]);
                     }
-                }
-
-                if ($is_refunded) {
-                    foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key != 'wc-refunded') {
-                            unset($wc_statuses_arr[$status_key]);
-                        }
-                    }
-                }
-
-                if ($is_cancelled) {
-                    foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key != 'wc-cancelled') {
-                            unset($wc_statuses_arr[$status_key]);
-                        }
-                    }
-
                 }
             }
 
+            if ($is_refunded) {
+                foreach ($wc_statuses_arr as $status_key => $status) {
+                    if ($status_key != 'wc-refunded') {
+                        unset($wc_statuses_arr[$status_key]);
+                    }
+                }
+            }
+
+            if ($is_cancelled) {
+                foreach ($wc_statuses_arr as $status_key => $status) {
+                    if ($status_key != 'wc-cancelled') {
+                        unset($wc_statuses_arr[$status_key]);
+                    }
+                }
+            }
         }
 
         return $wc_statuses_arr;
