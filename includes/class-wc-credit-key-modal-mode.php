@@ -29,9 +29,9 @@ class CreditKeyModalMode {
 			return;
 		}
 
-		$show_on_product_page = ( isset( $gateway_settings['mode'] ) ) ? $gateway_settings['mode'] : 'redirect';
-		$is_enabled           = $gateway_settings['enabled'];
-		if ( 'no' === $is_enabled || $show_on_product_page !== 'modal' || ! is_checkout() ) {
+		$mode       = ( isset( $gateway_settings['mode'] ) ) ? $gateway_settings['mode'] : 'redirect';
+		$is_enabled = isset( $gateway_settings['enabled'] ) ? $gateway_settings['enabled'] : 'no';
+		if ( 'no' === $is_enabled || $mode !== 'modal' || ! is_checkout() ) {
 			return;
 		}
 
