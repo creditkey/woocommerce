@@ -564,6 +564,16 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
 
                 if (!$is_confirmed) {
+                    if (empty($ck_order_id)) {
+                        if ($this->logging === 'yes') {
+                            wc_get_logger()->debug(print_r([
+                                'action'   => 'credit_key_confirm_skipped',
+                                'reason'   => 'missing_ck_order_id',
+                                'order_id' => $order_id,
+                            ], true), ['source' => $this->id]);
+                        }
+                        return;
+                    }
 
                     $order_status = $order->get_status();
 
@@ -592,7 +602,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                     $order->save();
                 }
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->lets_log($e);
         }
     }
@@ -651,7 +661,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 }
 
                 $order_status = $order->get_status();
-                $allowed_statuses = ['processing', 'completed', 'refunded', 'cancelled'];
+                $allowed_statuses = ['processing', 'refunded', 'cancelled'];
                 if (!in_array($order_status, $allowed_statuses, true)) {
                     if ($this->logging === 'yes') {
                         wc_get_logger()->debug(print_r([
