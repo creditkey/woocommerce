@@ -89,7 +89,7 @@ MANUAL INSTALLATION:
 * Changes in payment method settings
 
 = 1.0.8.2 =
-* Remove wakeup and clone methods that throwed the warning
+* Remove wakeup and clone methods that threw the warning
 
 = 1.0.8.1 =
 * Fix for WooCommerce Sequential Order Numbers
