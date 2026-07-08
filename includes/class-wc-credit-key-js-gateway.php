@@ -67,8 +67,10 @@ class CreditKeyNotCheckoutPayment
 
         $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
         $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
-        $cart_alignment_desktop = $gateway_settings['cart_alignment_desktop'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_desktop'];
-        $cart_alignment_mobile  = $gateway_settings['cart_alignment_mobile'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_mobile'];
+        $desktop_align = $gateway_settings['cart_alignment_desktop'] ?? 'right';
+        $mobile_align  = $gateway_settings['cart_alignment_mobile'] ?? 'right';
+        $cart_alignment_desktop = ($desktop_align === 'centered') ? 'center' : $desktop_align;
+        $cart_alignment_mobile  = ($mobile_align === 'centered') ? 'center' : $mobile_align;
 
         wp_localize_script('credit-key-scripts', 'CreditKey', array(
             'ajax_url'             => admin_url('admin-ajax.php'),
