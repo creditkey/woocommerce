@@ -78,7 +78,7 @@
 
             try {
                 $result = \CreditKey\Api::post('/ecomm/update_order', $formData);
-                $logResult = is_array($result) ? $result : [];
+                $logResult = is_array($result) ? $result : (is_object($result) ? (array) $result : []);
                 if (isset($logResult['shipping_address'])) {
                     $logResult['shipping_address'] = '[redacted]';
                 }
