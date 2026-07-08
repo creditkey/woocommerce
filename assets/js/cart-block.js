@@ -191,7 +191,7 @@
                 return;
             }
             scheduled = true;
-            (window.requestAnimationFrame || window.setTimeout)(function () {
+            (window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : window.setTimeout)(function () {
                 scheduled = false;
                 render();
             });
