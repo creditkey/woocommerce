@@ -1,4 +1,4 @@
- === Credit Key Payment Gateway ===
+=== Credit Key Payment Gateway ===
 Contributors: egoodman, antondrob2
 Tags: Financing, B2B, Payments, Checkout, Cart Abandonment
 Tested up to: 6.9.1
