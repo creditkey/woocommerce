@@ -66,12 +66,12 @@ jQuery(document).ready(function ($) {
      *
      * @returns string
      */
-    function getGarewayRadioSelector(gateway_id) {
+    function getGatewayRadioSelector(gateway_id) {
         return 'input#payment_method_' + gateway_id;
     }
 
     function getGatewayRadio(gateway_id) {
-        return jQuery(getGarewayRadioSelector(gateway_id));
+        return jQuery(getGatewayRadioSelector(gateway_id));
     }
 
     /**

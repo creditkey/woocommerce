@@ -109,6 +109,16 @@ class WC_Credit_Key extends WC_Payment_Gateway
     public function init_form_fields()
     {
         $this->form_fields = [
+            'mode'         => [
+                'title'       => esc_html__('Checkout Mode', 'credit_key'),
+                'type'        => 'select',
+                'description' => esc_html__('Select how Credit Key checkout is presented to customers.', 'credit_key'),
+                'default'     => 'redirect',
+                'options'     => [
+                    'redirect' => esc_html__('Redirect', 'credit_key'),
+                    'modal'    => esc_html__('Modal', 'credit_key'),
+                ],
+            ],
             'enabled'      => [
                 'title'       => esc_html__('Enable Credit Key Payment Gateway', 'credit_key'),
                 'label'       => esc_html__('Enable/Disable', 'credit_key'),
