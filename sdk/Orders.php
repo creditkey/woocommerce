@@ -41,7 +41,7 @@
 
             try {
                 $result = \CreditKey\Api::post('/ecomm/confirm_order', $payload);
-                $logResult = is_array($result) ? $result : [];
+                $logResult = is_array($result) ? $result : (is_object($result) ? (array) $result : []);
                 if (isset($logResult['shipping_address'])) {
                     $logResult['shipping_address'] = '[redacted]';
                 }
