@@ -129,7 +129,7 @@ class CreditKeyNotCheckoutPayment
             $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
             ?>
             <script type="text/javascript">
-                let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $environment; ?>');
+                let client = new ck.Client(<?php echo wp_json_encode($public_key); ?>, <?php echo wp_json_encode($environment); ?>);
                 let charges = new ck.Charges(<?php echo $product_price; ?>, 0, 0, 0, <?php echo $product_price; ?>);
                 
                 <?php if (! empty($gateway_settings['promo_message_product_selector'])): ?>
