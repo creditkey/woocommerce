@@ -586,7 +586,9 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
                 $order->add_order_note(esc_html__('Order paid via Credit Key.', 'credit_key'), 1);
                 $order->payment_complete($ck_order_id);
-                WC()->cart->empty_cart();
+                if (WC()->cart) {
+                    WC()->cart->empty_cart();
+                }
 
                 $thank_you_url = $order->get_checkout_order_received_url();
                 wp_safe_redirect($thank_you_url);
