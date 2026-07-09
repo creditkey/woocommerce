@@ -34,6 +34,8 @@ class WC_Credit_Key extends WC_Payment_Gateway
     /** @var string */
     public $order_prefix = '';
     /** @var string */
+    public $order_suffix = '';
+    /** @var string */
     public $public_key = '';
     /** @var string */
     public $shared_secret = '';
@@ -70,6 +72,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
         $this->enabled       = $this->get_option('enabled');
         $this->testmode      = ('yes' === $this->get_option('is_test'));
         $this->order_prefix  = $this->get_option('order_prefix');
+        $this->order_suffix  = $this->get_option('order_suffix');
         $this->public_key    = $this->testmode ? $this->get_option('test_public_key') : $this->get_option('public_key');
         $this->shared_secret = $this->testmode ? $this->get_option('test_shared_secret') : $this->get_option('shared_secret');
         $this->api_url       = $this->testmode ? 'https://staging.creditkey.com/app' : 'https://www.creditkey.com/app';
@@ -138,6 +141,20 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 'type'        => 'number',
                 'description' => 'The minimum order amount to offer Credit Key as a payment method in checkout.',
                 'default'     => 0
+            ],
+            'order_prefix' => [
+                'title'       => esc_html__('Order Prefix', 'credit_key'),
+                'type'        => 'text',
+                'description' => esc_html__('Prefix added to merchant order ids sent to Credit Key.', 'credit_key'),
+                'default'     => '',
+                'desc_tip'    => true,
+            ],
+            'order_suffix' => [
+                'title'       => esc_html__('Order Suffix', 'credit_key'),
+                'type'        => 'text',
+                'description' => esc_html__('Suffix added to merchant order ids sent to Credit Key.', 'credit_key'),
+                'default'     => '',
+                'desc_tip'    => true,
             ],
             'is_test'      => [
                 'title'       => esc_html__('API Mode', 'credit_key'),
@@ -446,21 +463,14 @@ class WC_Credit_Key extends WC_Payment_Gateway
         $customerId       = $this->get_customer_id();
 
         // Filter the order number sent to Credit Key
-        $remoteId = apply_filters(
-            'woocommerce_credit_key_order_number',
-            self::get_sequential_order_number($order_id),
-            $order_id
-        );
+        $remoteId = $this->get_credit_key_merchant_order_id($order_id);
 
-        // Important: Use the filtered custom order number in returnUrl
-        $returnUrl = home_url() . '/wc-api/credit_key?order_id=' . urlencode($remoteId) . '&id=%CKKEY%';
+        // Use the internal WooCommerce order id for the return URL. The merchant
+        // order id sent to Credit Key may include custom formatting that is not
+        // guaranteed to map back to a local order.
+        $returnUrl = home_url() . '/wc-api/credit_key?order_id=' . urlencode($order_id) . '&id=%CKKEY%';
 
         $cancelUrl = wc_get_checkout_url();
-
-        // Server-to-server callback Credit Key uses to complete administratively
-        // approved pended orders, independent of the borrower's browser session.
-        // Points at the same webhook endpoint, which completes orders idempotently.
-        $orderCompleteUrl = $returnUrl;
 
         Api::configure($this->api_url, $this->public_key, $this->shared_secret);
         $customerCheckoutUrl = Checkout::beginCheckout(
@@ -472,7 +482,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $customerId,
             $returnUrl,
             $cancelUrl,
-            $orderCompleteUrl,
             'redirect'
         );
 
@@ -509,22 +518,37 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $ck_order_id = sanitize_text_field($_GET['id']);
             $order_number = sanitize_text_field($_GET['order_id']);
 
-            // Allow custom mapping from order_number to internal order ID
-            $internal_order_id = apply_filters(
-                'woocommerce_credit_key_order_id_from_number',
-                function_exists('wc_sequential_order_numbers')
-                    ? wc_sequential_order_numbers()->find_order_by_order_number($order_number)
-                    : 0,
-                $order_number
-            );
+            $order = wc_get_order($order_number);
 
-            if ($internal_order_id) {
-                $order = wc_get_order($internal_order_id);
-            } else {
-                $order = wc_get_order($order_number);
+            if (!$order) {
+                // Backward compatibility for return URLs generated before this
+                // used the internal order id. Those URLs may contain the merchant
+                // order number instead.
+                $internal_order_id = apply_filters(
+                    'woocommerce_credit_key_order_id_from_number',
+                    function_exists('wc_sequential_order_numbers')
+                        ? wc_sequential_order_numbers()->find_order_by_order_number($order_number)
+                        : 0,
+                    $order_number
+                );
+
+                if ($internal_order_id) {
+                    $order = wc_get_order($internal_order_id);
+                }
             }
 
             if (!$order) {
+                $order = $this->find_order_by_credit_key_order_number($order_number);
+            }
+
+            if (!$order) {
+                if ($this->logging === 'yes') {
+                    wc_get_logger()->debug(print_r([
+                        'action'       => 'credit_key_webhook_order_not_found',
+                        'order_number' => $order_number,
+                        'ck_order_id'  => $ck_order_id,
+                    ], true), ['source' => $this->id]);
+                }
                 wp_redirect(wc_get_checkout_url());
                 exit;
             }
@@ -533,7 +557,30 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $order->save();
 
             Api::configure($this->api_url, $this->public_key, $this->shared_secret);
-            $complete_checkout = Checkout::completeCheckout($ck_order_id);
+            if ($this->logging === 'yes') {
+                wc_get_logger()->debug(print_r([
+                    'action'      => 'credit_key_complete_checkout_before',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                ], true), ['source' => $this->id]);
+            }
+
+            try {
+                $complete_checkout = Checkout::completeCheckout($ck_order_id);
+            } catch (\Throwable $e) {
+                $this->lets_log($e);
+                wp_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            if ($this->logging === 'yes') {
+                wc_get_logger()->debug(print_r([
+                    'action'      => 'credit_key_complete_checkout_after',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'success'     => (bool) $complete_checkout,
+                ], true), ['source' => $this->id]);
+            }
 
             if ($complete_checkout) {
 
@@ -589,11 +636,11 @@ class WC_Credit_Key extends WC_Payment_Gateway
                             'order_id'    => $order_id,
                             'ck_order_id' => $ck_order_id,
                             'status'      => $order_status,
-                            'merchant_no' => self::get_sequential_order_number($order_id),
+                            'merchant_no' => $this->get_credit_key_merchant_order_id($order_id),
                         ], true), ['source' => $this->id]);
                     }
 
-                    $result = Orders::confirm($ck_order_id, self::get_sequential_order_number($order_id), $order_status, $order_items, $charges);
+                    $result = Orders::confirm($ck_order_id, $this->get_credit_key_merchant_order_id($order_id), $order_status, $order_items, $charges);
 
                     if ($this->logging === 'yes') {
                         wc_get_logger()->debug(print_r($result, true), ['source' => $this->id]);
@@ -679,11 +726,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $charges = $order_data['charges'];
 
                 // Allow filtering of the order number sent to Credit Key
-                $merchant_order_no = apply_filters(
-                    'woocommerce_credit_key_order_number',
-                    self::get_sequential_order_number($order_id),
-                    $order_id
-                );
+                $merchant_order_no = $this->get_credit_key_merchant_order_id($order_id);
 
                 Api::configure($this->api_url, $this->public_key, $this->shared_secret);
                 Orders::update($ck_order_id, $order_status, $merchant_order_no, $order_items, $charges, $shipping_address);
@@ -787,6 +830,42 @@ class WC_Credit_Key extends WC_Payment_Gateway
         }
 
         return (string) $order_id;
+    }
+
+    private function get_credit_key_merchant_order_id($order_id) {
+        $order_number = self::get_sequential_order_number($order_id);
+        $prefix       = is_string($this->order_prefix) ? $this->order_prefix : '';
+        $suffix       = is_string($this->order_suffix) ? $this->order_suffix : '';
+
+        return apply_filters(
+            'woocommerce_credit_key_order_number',
+            $prefix . $order_number . $suffix,
+            $order_id
+        );
+    }
+
+    private function find_order_by_credit_key_order_number($order_number) {
+        if (!function_exists('wc_get_orders')) {
+            return null;
+        }
+
+        $orders = wc_get_orders([
+            'limit'          => 100,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'payment_method' => $this->id,
+            'return'         => 'ids',
+        ]);
+
+        foreach ($orders as $order_id) {
+            $candidate_order_number = $this->get_credit_key_merchant_order_id($order_id);
+
+            if ((string) $candidate_order_number === (string) $order_number) {
+                return wc_get_order($order_id);
+            }
+        }
+
+        return null;
     }
 
     public function prevent_unauthorized_status_change($order_id, $old_status, $new_status, $order) {
