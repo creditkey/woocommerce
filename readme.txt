@@ -66,7 +66,7 @@ MANUAL INSTALLATION:
 == Changelog ==
 
 = 2.2 =
-* SDK: Update bundled Credit Key PHP SDK to v1.0.7 (adds order_complete_url support to begin checkout).
+* SDK: Update bundled Credit Key PHP SDK to v1.0.7.
 * Cart messaging: Add WooCommerce Cart block compatibility for on-site promotional messaging.
 * Fix: Register the payment gateway reliably regardless of plugin load order (previously the gateway could be dropped, leaving a blank settings page).
 * Fix: Selector-based cart messaging now uses the cart display method instead of the product one.
