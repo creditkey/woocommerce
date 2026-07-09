@@ -169,7 +169,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
             ],
 
             'test_public_key' => [
-                'title' => esc_html__('Public Key', 'credit_key'),
+                'title' => esc_html__('Test Public Key', 'credit_key'),
                 'type'  => 'text',
             ],
 
