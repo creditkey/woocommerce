@@ -170,7 +170,7 @@ class CreditKeyNotCheckoutPayment
             echo '</div>';
             ?>
             <script type="text/javascript">
-                let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $environment; ?>');
+                let client = new ck.Client(<?php echo wp_json_encode($public_key); ?>, <?php echo wp_json_encode($environment); ?>);
                 let charges = new ck.Charges(<?php echo $cart_total; ?>, 0, 0, 0, <?php echo $cart_total; ?>);
                 <?php if (! empty($gateway_settings['promo_message_cart_selector'])): ?>
                 jQuery(document).ready(function ($) {
