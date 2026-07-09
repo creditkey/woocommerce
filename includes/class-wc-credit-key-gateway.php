@@ -268,7 +268,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         wp_register_script('creditkey-dashboard-scripts', Main::$plugin_url . 'assets/js/scripts-dashboard.js', ['jquery'], time());
         wp_enqueue_script('creditkey-dashboard-scripts');
-        wp_enqueue_editor();
     }
 
     private function get_customer_id()
