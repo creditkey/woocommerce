@@ -179,7 +179,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
             ],
 
             'test_shared_secret'             => [
-                'title' => esc_html__('Shared Secret', 'credit_key'),
+                'title' => esc_html__('Test Shared Secret', 'credit_key'),
                 'type'  => 'text',
             ],
             'product_page'                   => [
