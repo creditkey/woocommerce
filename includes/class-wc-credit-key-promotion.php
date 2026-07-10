@@ -2,16 +2,16 @@
 
 namespace CreditKey;
 
-class CreditKeyNotCheckoutPayment
+class CreditKeyPromition
 {
-    private static $instance;
-    public string $gateway_id;
-    /**
-     * @var array|null
-     */
-    private $gateway_settings;
-    
-    private function __construct()
+    private static ?CreditKeyPromition $instance = null;
+	public string $gateway_id;
+	/**
+	 * @var false|mixed|void
+	 */
+	private $gateway_settings;
+
+	private function __construct()
     {
         $this->gateway_id       = Main::$gateway_id;
         $this->gateway_settings = get_option('woocommerce_' . Main::$gateway_id . '_settings');
@@ -41,59 +41,26 @@ class CreditKeyNotCheckoutPayment
 	    }
 
         $show_on_product_page = (isset($gateway_settings['product_page'])) ? $gateway_settings['product_page'] : 'no';
-        $show_on_cart_page    = (isset($gateway_settings['cart_page'])) ? $gateway_settings['cart_page'] : 'no';
-        $is_enable            = (isset($gateway_settings['enabled'])) ? $gateway_settings['enabled'] : 'no';
-        if ('no' === $is_enable) {
+        $is_enable            = $gateway_settings['enabled'];
+        if ('no' === $is_enable || $show_on_product_page == 'no') {
             return;
         }
+        
+        if (is_product() || is_cart()) {
+	        wp_enqueue_script('credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@latest/umd/creditkey-js.js', null, '1.0.96');
 
-        // Enqueue per surface: product messaging on product pages, cart messaging on
-        // the cart page. Cart assets must load even when product messaging is disabled,
-        // otherwise block-cart messaging (and classic-cart messaging) have no `ck` runtime.
-        $enqueue_for_product = is_product() && $show_on_product_page == 'yes';
-        $enqueue_for_cart    = is_cart() && $show_on_cart_page == 'yes';
-        if (!$enqueue_for_product && !$enqueue_for_cart) {
-            return;
+	        wp_enqueue_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array(
+                'jquery',
+                'credit-key-js'
+            ), time());
+
+            wp_localize_script('credit-key-scripts', 'CreditKey', array(
+                'ajax_url'   => admin_url('admin-ajax.php'),
+                'imagesPath' => Main::$plugin_url
+            ));
+
+	        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css');
         }
-
-        wp_register_script('credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@latest/umd/creditkey-js.js', null, '1.0.96');
-        wp_enqueue_script('credit-key-js');
-
-        wp_register_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array(
-            'jquery',
-            'credit-key-js'
-        ), time());
-        wp_enqueue_script('credit-key-scripts');
-
-        $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
-        $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
-        $cart_alignment_desktop = $gateway_settings['cart_alignment_desktop'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_desktop'];
-        $cart_alignment_mobile  = $gateway_settings['cart_alignment_mobile'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_mobile'];
-
-        wp_localize_script('credit-key-scripts', 'CreditKey', array(
-            'ajax_url'             => admin_url('admin-ajax.php'),
-            'imagesPath'           => Main::$plugin_url,
-            'cartEnabled'          => $show_on_cart_page,
-            'publicKey'            => $public_key,
-            'environment'          => $environment,
-            'minCart'              => isset($gateway_settings['min_cart']) ? $gateway_settings['min_cart'] : 0,
-            'cartSelector'         => isset($gateway_settings['promo_message_cart_selector']) ? $gateway_settings['promo_message_cart_selector'] : '',
-            'cartAlignmentDesktop' => $cart_alignment_desktop,
-            'cartAlignmentMobile'  => $cart_alignment_mobile,
-        ));
-
-        // Block-cart messaging: the classic `woocommerce_after_cart_totals` hook never
-        // fires for the `woocommerce/cart` block, so render client-side after it mounts.
-        if ($enqueue_for_cart && function_exists('has_block') && has_block('woocommerce/cart')) {
-            wp_register_script('credit-key-cart-block', Main::$plugin_url . 'assets/js/cart-block.js', array(
-                'credit-key-js',
-                'credit-key-scripts',
-                'wp-data'
-            ), time(), true);
-            wp_enqueue_script('credit-key-cart-block');
-        }
-
-        wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css');
     }
     
     public function add_credit_key_button()
@@ -105,8 +72,8 @@ class CreditKeyNotCheckoutPayment
         $product_id    = get_the_ID();
         $product       = wc_get_product($product_id);
         $product_price = $product->get_price();
-        $min_total     = isset($gateway_settings['min_product']) ? $gateway_settings['min_product'] : 0;
-        $button_type   = isset($gateway_settings['button_display']) ? $gateway_settings['button_display'] : '';
+        $min_total     = $gateway_settings['min_product'] ?? 0;
+        $button_type   = $gateway_settings['button_display'] ?? '';
         
         if ($show_on_product_page == 'yes' && $product_price >= $min_total && $active_plugin == 'yes') {
             
@@ -168,7 +135,7 @@ class CreditKeyNotCheckoutPayment
                 let charges = new ck.Charges(<?php echo $cart_total; ?>, 0, 0, 0, <?php echo $cart_total; ?>);
                 <?php if (! empty($gateway_settings['promo_message_cart_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $('<?php echo $gateway_settings['promo_message_cart_selector'] ?>').append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>));
+                    $('<?php echo $gateway_settings['promo_message_cart_selector'] ?>').append(client.get_pdp_display(charges));
                 });
                 <?php else: ?>
                 cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
@@ -196,4 +163,4 @@ class CreditKeyNotCheckoutPayment
     }
 }
 
-CreditKeyNotCheckoutPayment::getInstance();
+CreditKeyPromition::getInstance();
