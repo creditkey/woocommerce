@@ -235,6 +235,16 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 'description' => '',
                 'default'     => 'no'
             ],
+            'mode'                           => [
+                'title'       => esc_html__('Checkout Mode', 'credit_key'),
+                'description' => esc_html__('Choose how the Credit Key checkout is presented to customers.', 'credit_key'),
+                'type'        => 'select',
+                'options'     => [
+                    'redirect' => esc_html__('Redirect', 'credit_key'),
+                    'modal'    => esc_html__('Modal', 'credit_key'),
+                ],
+                'default'     => 'redirect',
+            ],
         ];
     }
 
@@ -308,15 +318,16 @@ class WC_Credit_Key extends WC_Payment_Gateway
                         $order = wc_get_order($order_id);
                         if ($order) {
                             foreach ($order->get_items() as $item) {
-                                $product = $item->get_product();
+                                $product_id = $item->get_product_id();
+                                $name       = $item->get_name();
+                                $quantity   = (int) $item->get_quantity();
+                                $price      = $quantity > 0 ? (float) $item->get_subtotal() / $quantity : 0.0;
+                                $sku        = '';
+                                $product    = $item->get_product();
                                 if ($product) {
-                                    $product_id = $product->get_id();
-                                    $name       = $product->get_name();
-                                    $price      = (float) $product->get_price();
-                                    $sku        = $product->get_sku();
-                                    $quantity   = (int) $item->get_quantity();
-                                    $cart_items[] = new CartItem($product_id, $name, $price, $sku, $quantity, null, null);
+                                    $sku = $product->get_sku();
                                 }
+                                $cart_items[] = new CartItem($product_id, $name, $price, $sku, $quantity, null, null);
                             }
                             $cart_total = (float) $order->get_total();
                         }
@@ -495,24 +506,29 @@ class WC_Credit_Key extends WC_Payment_Gateway
         if (isset($_GET['id'], $_GET['order_id'])) {
 
             $ck_order_id = sanitize_text_field($_GET['id']);
-            $order_number = sanitize_text_field($_GET['order_id']);
-
-            // Allow custom mapping from order_number to internal order ID
-            $internal_order_id = apply_filters(
-                'woocommerce_credit_key_order_id_from_number',
-                function_exists('wc_sequential_order_numbers')
-                    ? wc_sequential_order_numbers()->find_order_by_order_number($order_number)
-                    : 0,
-                $order_number
-            );
-
-            if ($internal_order_id) {
-                $order = wc_get_order($internal_order_id);
-            } else {
-                $order = wc_get_order($order_number);
-            }
+            $wc_order_id = absint($_GET['order_id']);
+            $order = $wc_order_id ? wc_get_order($wc_order_id) : false;
 
             if (!$order) {
+                wp_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            if ($order->get_payment_method() !== $this->id) {
+                wp_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+
+            try {
+                $remote_order = Orders::find($ck_order_id);
+            } catch (\Throwable $e) {
+                wp_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            if (!$remote_order || $remote_order->getMerchantOrderId() !== $this->get_credit_key_merchant_order_id($order->get_id())) {
                 wp_redirect(wc_get_checkout_url());
                 exit;
             }
@@ -520,7 +536,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $order->update_meta_data('ck_order_id', $ck_order_id);
             $order->save();
 
-            Api::configure($this->api_url, $this->public_key, $this->shared_secret);
             $complete_checkout = Checkout::completeCheckout($ck_order_id);
 
             if ($complete_checkout) {

@@ -14,13 +14,30 @@
             return isset($settings['logging']) && $settings['logging'] === 'yes' && function_exists('wc_get_logger');
         }
 
+        private static function redact($data)
+        {
+            static $pii_keys = ['email', 'phone', 'first_name', 'last_name', 'address1', 'address2', 'city', 'state', 'zip', 'company', 'name'];
+            if (!is_array($data) && !is_object($data)) {
+                return $data;
+            }
+            $result = (array) $data;
+            foreach ($result as $key => &$value) {
+                if (in_array(strtolower((string) $key), $pii_keys, true)) {
+                    $value = '[redacted]';
+                } elseif (is_array($value) || is_object($value)) {
+                    $value = self::redact($value);
+                }
+            }
+            return $result;
+        }
+
         private static function log($message, $data = [])
         {
             if (self::shouldLog()) {
                 wc_get_logger()->debug(print_r([
                     'sdk' => 'credit_key',
                     'message' => $message,
-                    'data' => $data,
+                    'data' => self::redact($data),
                 ], true), ['source' => 'credit_key']);
             }
         }
