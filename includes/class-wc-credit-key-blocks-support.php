@@ -38,16 +38,16 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
         }
 
         public function get_payment_method_data() {
-            $title       = isset( $this->settings['title'] ) ? $this->settings['title'] : __( 'Credit Key', 'credit_key' );
             $description = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 
             $is_eligible = $this->is_checkout_eligible();
 
             return [
-                'title'       => $title,
+                'title'       => '',
+                'ariaLabel'   => __( 'Credit Key', 'credit_key' ),
                 'description' => $description,
                 'isEligible'  => $is_eligible,
-                'icon'        => Main::$plugin_url . 'assets/images/8da7cc1-Credit-key-payment-method.svg',
+                'icon'        => Main::$plugin_url . 'assets/images/credit-key-payment-method-new-logo.svg',
             ];
         }
 
@@ -90,5 +90,3 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
         }
     }
 }
-
-

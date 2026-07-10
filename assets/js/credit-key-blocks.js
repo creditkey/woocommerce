@@ -9,16 +9,13 @@
     }
 
     const Label = () => {
-        const children = [ settings.title || 'Credit Key' ];
         if ( settings.icon ) {
-            children.push(
-                wp.element.createElement(
-                    'img',
-                    { key: 'ck-icon', src: settings.icon, alt: settings.title || 'Credit Key', className: 'ck-block-icon' }
-                )
+            return wp.element.createElement(
+                'img',
+                { src: settings.icon, alt: settings.ariaLabel || 'Credit Key', className: 'ck-block-icon' }
             );
         }
-        return wp.element.createElement( 'span', { className: 'ck-label' }, children );
+        return wp.element.createElement( 'span', { className: 'ck-label' }, settings.ariaLabel || 'Credit Key' );
     };
 
     const Content = () => {
@@ -31,12 +28,11 @@
         content: wp.element.createElement( Content ),
         edit: wp.element.createElement( Content ),
         canMakePayment: () => !! settings.isEligible,
-        ariaLabel: settings.title || 'Credit Key',
+        ariaLabel: settings.ariaLabel || 'Credit Key',
+        placeOrderButtonLabel: 'Continue with Credit Key',
         icons: settings.icon ? [ settings.icon ] : [],
         supports: {
             features: [ 'products', 'refunds' ]
         },
     } );
 } )();
-
-
