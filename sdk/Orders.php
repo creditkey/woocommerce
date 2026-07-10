@@ -16,7 +16,7 @@
 
         private static function redact($data)
         {
-            static $pii_keys = ['email', 'phone', 'first_name', 'last_name', 'address1', 'address2', 'city', 'state', 'zip', 'company', 'name'];
+            static $pii_keys = ['email', 'phone', 'phone_number', 'first_name', 'last_name', 'address1', 'address2', 'city', 'state', 'zip', 'company', 'company_name', 'name'];
             if (!is_array($data) && !is_object($data)) {
                 return $data;
             }
