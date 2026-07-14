@@ -111,6 +111,11 @@ class Main
 
     public function registerBlocksIntegration( $payment_method_registry )
     {
+        $this->loadGatewayClasses();
+        if ( ! $this->classesLoaded ) {
+            return;
+        }
+
         // Ensure class file is loaded before registration.
         if ( ! class_exists( '\\WC_Credit_Key_Blocks_Support' ) ) {
             require_once __DIR__ . '/includes/class-wc-credit-key-blocks-support.php';
