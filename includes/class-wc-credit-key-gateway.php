@@ -307,16 +307,18 @@ class WC_Credit_Key extends WC_Payment_Gateway
                     if ($order_id) {
                         $order = wc_get_order($order_id);
                         if ($order) {
-                            foreach ($order->get_items() as $item) {
-                                $product = $item->get_product();
-                                if ($product) {
-                                    $product_id = $product->get_id();
-                                    $name       = $product->get_name();
-                                    $price      = (float) $product->get_price();
-                                    $sku        = $product->get_sku();
-                                    $quantity   = (int) $item->get_quantity();
-                                    $cart_items[] = new CartItem($product_id, $name, $price, $sku, $quantity, null, null);
-                                }
+foreach ($order->get_items() as $item) {
+    $product_id = $item->get_product_id();
+    $name       = $item->get_name();
+    $quantity   = (int) $item->get_quantity();
+    $price      = $quantity > 0 ? (float) $item->get_subtotal() / $quantity : 0.0;
+    $sku        = '';
+    $product    = $item->get_product();
+    if ($product) {
+        $sku = $product->get_sku();
+    }
+    $cart_items[] = new CartItem($product_id, $name, $price, $sku, $quantity, null, null);
+}
                             }
                             $cart_total = (float) $order->get_total();
                         }
