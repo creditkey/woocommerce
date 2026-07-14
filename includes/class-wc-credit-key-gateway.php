@@ -808,6 +808,11 @@ class WC_Credit_Key extends WC_Payment_Gateway
             return;
         }
 
+        $changes = $order->get_changes();
+        if (empty($changes['status'])) {
+            return;
+        }
+
         $db_order = wc_get_order($order->get_id());
         if (!$db_order) {
             return;
