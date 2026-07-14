@@ -28,7 +28,7 @@ jQuery(document).ready(function ($) {
         $.ajax({
             method: 'POST',
             dataType: 'json',
-            url: '/?wc-ajax=checkout&get_modal_data=1',
+            url: window.wc_checkout_params.checkout_url,
             data: $form.serialize(),
             beforeSend: function (xhr) {
 
