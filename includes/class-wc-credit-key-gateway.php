@@ -554,7 +554,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $is_confirmed = $order->get_meta('ck_is_confirmed', true);
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
 
-                if (!$is_confirmed) {
+if (!$is_confirmed && !$order->get_meta('ck_is_cancelled', true)) {
 
                     $order_status = $order->get_status();
 
