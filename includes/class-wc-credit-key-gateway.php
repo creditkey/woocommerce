@@ -103,7 +103,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         add_action('wp_enqueue_scripts', [$this, 'payment_scripts']);
 
-        add_action('woocommerce_order_status_changed', [$this, 'prevent_unauthorized_status_change'], 10, 4);
+        add_filter('woocommerce_order_status_changing', [$this, 'prevent_unauthorized_status_change'], 10, 2);
     }
 
     /**
@@ -796,27 +796,15 @@ class WC_Credit_Key extends WC_Payment_Gateway
         );
     }
 
-    public function prevent_unauthorized_status_change($order_id, $old_status, $new_status, $order) {
-        // 1. Check if it is our gateway
+    public function prevent_unauthorized_status_change($new_status, $order) {
         if ($order->get_payment_method() !== $this->id) {
-            return;
+            return $new_status;
         }
 
-        // 2. Define "Locked" statuses (from)
-        if ($old_status === 'cancelled') {
-            // 3. Define allowed transitions (e.g. maybe to 'refunded' if you want that, otherwise just block all)
-            // If we strictly want "Once cancelled, always cancelled":
-            if ($new_status !== 'cancelled') {
-
-                // Remove this hook to prevent infinite loop during revert
-                remove_action('woocommerce_order_status_changed', [$this, 'prevent_unauthorized_status_change'], 10);
-
-                // Revert status
-                $order->update_status('cancelled', __('Credit Key: Cannot change status from Cancelled.', 'credit_key'));
-
-                // Re-add hook
-                add_action('woocommerce_order_status_changed', [$this, 'prevent_unauthorized_status_change'], 10, 4);
-            }
+        if ($order->get_status() === 'cancelled' && $new_status !== 'cancelled') {
+            return 'cancelled';
         }
+
+        return $new_status;
     }
 }
