@@ -673,8 +673,15 @@ class WC_Credit_Key extends WC_Payment_Gateway
     public function control_order_statuses($wc_statuses_arr)
     {
         global $pagenow;
-        if (is_admin() && $pagenow == 'post.php' && get_post_type() == 'shop_order') {
-            $order_id       = get_the_ID();
+
+        $order_id = null;
+        if (is_admin() && $pagenow === 'post.php' && get_post_type() === 'shop_order') {
+            $order_id = get_the_ID();
+        } elseif (is_admin() && $pagenow === 'admin.php' && isset($_GET['page']) && $_GET['page'] === 'wc-orders' && isset($_GET['id'])) {
+            $order_id = absint($_GET['id']);
+        }
+
+        if ($order_id) {
             $order          = wc_get_order($order_id);
             $payment_method = $order->get_payment_method();
 
