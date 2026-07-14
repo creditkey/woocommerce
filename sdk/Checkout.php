@@ -18,7 +18,7 @@
             $charges, $remoteId, $customerId, $returnUrl, $cancelUrl, $orderCompleteUrl, $mode)
         {
             if (is_null($cartContents) || is_null($billingAddress) || is_null($shippingAddress)
-                || is_null($charges) || is_null($remoteId) || is_null($returnUrl) || is_null($cancelUrl))
+                || is_null($charges) || is_null($remoteId) || is_null($returnUrl) || is_null($cancelUrl) || is_null($orderCompleteUrl))
             {
                 throw new \CreditKey\Exceptions\InvalidRequestException();
             }
