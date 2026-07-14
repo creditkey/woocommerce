@@ -128,16 +128,16 @@ class CreditKeyNotCheckoutPayment
             <script type="text/javascript">
                 let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $environment; ?>');
                 let charges = new ck.Charges(<?php echo $product_price; ?>, 0, 0, 0, <?php echo $product_price; ?>);
+                let pdp = document.getElementById('pdp');
                 
                 <?php if (! empty($gateway_settings['promo_message_product_selector'])): ?>
                 jQuery(document).ready(function ($) {
                     $(<?php echo wp_json_encode($gateway_settings['promo_message_product_selector']); ?>).append(client.get_pdp_display(charges));
                 });
                 <?php else: ?>
-                pdp.innerHTML = client.get_pdp_display(charges);
+                if (pdp) { pdp.innerHTML = client.get_pdp_display(charges); }
                 <?php endif; ?>
             </script>
-            <?php
         }
     }
     
