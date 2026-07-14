@@ -35,7 +35,7 @@ class CreditKeyModalMode {
 			return;
 		}
 
-		wp_enqueue_script( 'credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@1.0.96/umd/creditkey-js.js', null, '1.0.96' );
+		wp_enqueue_script( 'credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@latest/umd/creditkey-js.js', null, '1.0.96' );
 
 		wp_enqueue_script( 'credit-key-modal-mode', Main::$plugin_url . 'assets/js/modal-mode.js', array(
 			'jquery',

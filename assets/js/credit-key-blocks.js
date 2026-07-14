@@ -29,10 +29,10 @@
         edit: wp.element.createElement( Content ),
         canMakePayment: () => !! settings.isEligible,
         ariaLabel: settings.ariaLabel || 'Credit Key',
-        placeOrderButtonLabel: 'Continue with Credit Key',
         icons: settings.icon ? [ settings.icon ] : [],
         supports: {
             features: [ 'products', 'refunds' ]
         },
     } );
 } )();
+

@@ -86,13 +86,13 @@
             $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
 
             if ($status == 401)
-                throw new \CreditKey\Exceptions\ApiUnauthorizedException('HTTP 401 Unauthorized');
+                throw new \CreditKey\Exceptions\ApiUnauthorizedException();
             else if ($status == 404)
-                throw new \CreditKey\Exceptions\NotFoundException('HTTP 404 Not Found');
+                throw new \CreditKey\Exceptions\NotFoundException();
             else if ($status == 400)
-                throw new \CreditKey\Exceptions\InvalidRequestException('HTTP 400 Bad Request');
+                throw new \CreditKey\Exceptions\InvalidRequestException();
             else if ($status != 200)
-                throw new \CreditKey\Exceptions\OperationErrorException('HTTP ' . $status);
+                throw new \CreditKey\Exceptions\OperationErrorException();
 
             // fwrite(STDERR, print_r($result, true));
             return json_decode($response);

@@ -56,7 +56,7 @@ class CreditKeyNotCheckoutPayment
             return;
         }
 
-        wp_register_script('credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@1.0.96/umd/creditkey-js.js', null, '1.0.96');
+        wp_register_script('credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@latest/umd/creditkey-js.js', null, '1.0.96');
         wp_enqueue_script('credit-key-js');
 
         wp_register_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array(
@@ -67,10 +67,8 @@ class CreditKeyNotCheckoutPayment
 
         $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
         $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
-        $cart_alignment_desktop = isset($gateway_settings['cart_alignment_desktop']) ? $gateway_settings['cart_alignment_desktop'] : 'left';
-        $cart_alignment_desktop = $cart_alignment_desktop === 'centered' ? 'center' : $cart_alignment_desktop;
-        $cart_alignment_mobile  = isset($gateway_settings['cart_alignment_mobile']) ? $gateway_settings['cart_alignment_mobile'] : 'left';
-        $cart_alignment_mobile  = $cart_alignment_mobile === 'centered' ? 'center' : $cart_alignment_mobile;
+        $cart_alignment_desktop = $gateway_settings['cart_alignment_desktop'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_desktop'];
+        $cart_alignment_mobile  = $gateway_settings['cart_alignment_mobile'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_mobile'];
 
         wp_localize_script('credit-key-scripts', 'CreditKey', array(
             'ajax_url'             => admin_url('admin-ajax.php'),
@@ -133,7 +131,7 @@ class CreditKeyNotCheckoutPayment
                 
                 <?php if (! empty($gateway_settings['promo_message_product_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $('<?php echo esc_js($gateway_settings['promo_message_product_selector']); ?>').append(client.get_pdp_display(charges));
+                    $('<?php echo $gateway_settings['promo_message_product_selector'] ?>').append(client.get_pdp_display(charges));
                 });
                 <?php else: ?>
                 pdp.innerHTML = client.get_pdp_display(charges);
@@ -152,13 +150,11 @@ class CreditKeyNotCheckoutPayment
         
         $cart_totals            = $woocommerce->cart->get_totals();
         $cart_total             = (float)$cart_totals['total'];
-        $min_total              = isset($gateway_settings['min_cart']) ? $gateway_settings['min_cart'] : 0;
-        $raw_desktop            = isset($gateway_settings['cart_alignment_desktop']) ? $gateway_settings['cart_alignment_desktop'] : 'left';
-        $raw_mobile             = isset($gateway_settings['cart_alignment_mobile']) ? $gateway_settings['cart_alignment_mobile'] : 'left';
-        $cart_alignment_desktop = $raw_desktop === 'centered' ? 'center' : $raw_desktop;
-        $cart_alignment_mobile  = $raw_mobile === 'centered' ? 'center' : $raw_mobile;
-        $cart_alignment_desktop_js = json_encode($cart_alignment_desktop);
-        $cart_alignment_mobile_js  = json_encode($cart_alignment_mobile);
+        $min_total              = $gateway_settings['min_cart'];
+        $gateway_settings['cart_alignment_desktop'] = $gateway_settings['cart_alignment_desktop'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_desktop'];
+        $gateway_settings['cart_alignment_mobile'] = $gateway_settings['cart_alignment_mobile'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_mobile'];
+        $cart_alignment_desktop = "'" . $gateway_settings['cart_alignment_desktop'] . "'";
+        $cart_alignment_mobile  = "'" . $gateway_settings['cart_alignment_mobile'] . "'";
         
         if ($show_on_cart_page == 'yes' && $cart_total >= $min_total && $active_plugin == 'yes') {
             $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
@@ -172,10 +168,10 @@ class CreditKeyNotCheckoutPayment
                 let charges = new ck.Charges(<?php echo $cart_total; ?>, 0, 0, 0, <?php echo $cart_total; ?>);
                 <?php if (! empty($gateway_settings['promo_message_cart_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $(<?php echo json_encode($gateway_settings['promo_message_cart_selector']); ?>).append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop_js . ", " . $cart_alignment_mobile_js; ?>));
+                    $('<?php echo $gateway_settings['promo_message_cart_selector'] ?>').append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>));
                 });
                 <?php else: ?>
-                cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop_js . ", " . $cart_alignment_mobile_js; ?>);
+                cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
                 <?php endif; ?>
             </script>
             <?php

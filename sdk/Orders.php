@@ -5,65 +5,17 @@
 
     final class Orders
     {
-        private static function shouldLog()
-        {
-            if (!function_exists('get_option')) {
-                return false;
-            }
-            $settings = get_option('woocommerce_credit_key_settings', []);
-            return isset($settings['logging']) && $settings['logging'] === 'yes' && function_exists('wc_get_logger');
-        }
-
-        private static function redact($data)
-        {
-            static $pii_keys = ['email', 'phone', 'phone_number', 'first_name', 'last_name', 'address1', 'address2', 'city', 'state', 'zip', 'company', 'company_name', 'name'];
-            if (!is_array($data) && !is_object($data)) {
-                return $data;
-            }
-            $result = (array) $data;
-            foreach ($result as $key => &$value) {
-                if (in_array(strtolower((string) $key), $pii_keys, true)) {
-                    $value = '[redacted]';
-                } elseif (is_array($value) || is_object($value)) {
-                    $value = self::redact($value);
-                }
-            }
-            return $result;
-        }
-
-        private static function log($message, $data = [])
-        {
-            if (self::shouldLog()) {
-                wc_get_logger()->debug(print_r([
-                    'sdk' => 'credit_key',
-                    'message' => $message,
-                    'data' => self::redact($data),
-                ], true), ['source' => 'credit_key']);
-            }
-        }
-
         public static function confirm($ckOrderId, $merchantOrderId, $merchantOrderStatus, $cartContents, $charges)
         {
-            $payload = array(
-                'id' => $ckOrderId,
-                'merchant_order_id' => $merchantOrderId,
-                'merchant_status' => $merchantOrderStatus,
-                'cart_contents' => CartContents::buildFormCartItems($cartContents),
-                'charges' => $charges->toFormData()
-            );
-
-            self::log('orders.confirm.request', [
-                'payload' => $payload,
-            ]);
-
-            try {
-                $result = \CreditKey\Api::post('/ecomm/confirm_order', $payload);
-                self::log('orders.confirm.response', [ 'result' => $result ]);
-                return Order::fromServiceData($result);
-            } catch (\Throwable $e) {
-                self::log('orders.confirm.error', [ 'error' => $e->getMessage() ]);
-                throw $e;
-            }
+            $result = \CreditKey\Api::post('/ecomm/confirm_order',
+                array(
+                    'id' => $ckOrderId,
+                    'merchant_order_id' => $merchantOrderId,
+                    'merchant_status' => $merchantOrderStatus,
+                    'cart_contents' => CartContents::buildFormCartItems($cartContents),
+                    'charges' => $charges->toFormData()
+                ));
+            return Order::fromServiceData($result);
         }
 
         public static function update($ckOrderId, $merchantOrderStatus, $merchantOrderId, $cartContents, $charges, $shippingAddress)
@@ -83,16 +35,8 @@
             if (!is_null($shippingAddress))
                 $formData['shipping_address'] = $shippingAddress->toFormData();
 
-            self::log('orders.update.request', [ 'payload' => $formData ]);
-
-            try {
-                $result = \CreditKey\Api::post('/ecomm/update_order', $formData);
-                self::log('orders.update.response', [ 'result' => $result ]);
-                return Order::fromServiceData($result);
-            } catch (\Throwable $e) {
-                self::log('orders.update.error', [ 'error' => $e->getMessage() ]);
-                throw $e;
-            }
+            $result = \CreditKey\Api::post('/ecomm/update_order', $formData);
+            return Order::fromServiceData($result);
         }
 
         public static function find($ckOrderId)
