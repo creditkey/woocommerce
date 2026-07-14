@@ -29,7 +29,10 @@
         edit: wp.element.createElement( Content ),
         canMakePayment: ( { cart } ) => {
             if ( ! settings.isEligible ) return false;
-            const cartTotal = parseInt( cart.cartTotals.total_price, 10 ) / 100;
+            const minorUnit = Number.isFinite( Number( cart.cartTotals.currency_minor_unit ) )
+                ? Number( cart.cartTotals.currency_minor_unit )
+                : 2;
+            const cartTotal = parseInt( cart.cartTotals.total_price, 10 ) / Math.pow( 10, minorUnit );
             return cartTotal > ( settings.minCheckout || 0 );
         },
         ariaLabel: settings.ariaLabel || 'Credit Key',
