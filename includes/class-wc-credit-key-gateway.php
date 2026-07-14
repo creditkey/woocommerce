@@ -574,17 +574,20 @@ class WC_Credit_Key extends WC_Payment_Gateway
                     $order_items = $order_data['order_items'];
                     $charges     = $order_data['charges'];
 
+                    $merchant_order_id = $order->get_meta('ck_merchant_order_id', true)
+                        ?: $this->get_credit_key_merchant_order_id($order_id);
+
                     if ($this->logging === 'yes') {
                         wc_get_logger()->debug(print_r([
                             'action'      => 'credit_key_confirm_before',
                             'order_id'    => $order_id,
                             'ck_order_id' => $ck_order_id,
                             'status'      => $order_status,
-                            'merchant_no' => $this->get_credit_key_merchant_order_id($order_id),
+                            'merchant_no' => $merchant_order_id,
                         ], true), ['source' => $this->id]);
                     }
 
-                    $result = Orders::confirm($ck_order_id, $this->get_credit_key_merchant_order_id($order_id), $order_status, $order_items, $charges);
+                    $result = Orders::confirm($ck_order_id, $merchant_order_id, $order_status, $order_items, $charges);
 
                     if ($this->logging === 'yes') {
                         wc_get_logger()->debug(print_r([
