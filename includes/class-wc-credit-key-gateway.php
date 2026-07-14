@@ -103,7 +103,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         add_action('wp_enqueue_scripts', [$this, 'payment_scripts']);
 
-        add_filter('woocommerce_order_status_changing', [$this, 'prevent_unauthorized_status_change'], 10, 5);
+        add_action('woocommerce_before_order_object_save', [$this, 'prevent_unauthorized_status_change'], 10, 1);
     }
 
     /**
@@ -803,15 +803,18 @@ class WC_Credit_Key extends WC_Payment_Gateway
         );
     }
 
-    public function prevent_unauthorized_status_change($allow, $order_id, $old_status, $new_status, $order) {
-        if ($order->get_payment_method() !== $this->id) {
-            return $allow;
+    public function prevent_unauthorized_status_change($order) {
+        if ($order->get_payment_method() !== $this->id || !$order->get_id()) {
+            return;
         }
 
-        if ($old_status === 'cancelled' && $new_status !== 'cancelled') {
-            return false;
+        $db_order = wc_get_order($order->get_id());
+        if (!$db_order) {
+            return;
         }
 
-        return $allow;
+        if ($db_order->get_status() === 'cancelled' && $order->get_status() !== 'cancelled') {
+            $order->set_status('cancelled');
+        }
     }
 }
