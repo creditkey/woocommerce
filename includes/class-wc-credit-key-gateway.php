@@ -503,10 +503,27 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 exit;
             }
 
-            $order->update_meta_data('ck_order_id', $ck_order_id);
-            $order->save();
+            if (!$order || $order->get_payment_method() !== $this->id) {
+                wp_safe_redirect(wc_get_checkout_url());
+                exit;
+            }
 
             Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+            try {
+                $remote_order = Orders::find($ck_order_id);
+            } catch (Exception $e) {
+                $this->lets_log($e);
+                wp_safe_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            if ($remote_order->getMerchantOrderId() !== $this->get_credit_key_merchant_order_id($order->get_id())) {
+                wp_safe_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            $order->update_meta_data('ck_order_id', $ck_order_id);
+            $order->save();
             $complete_checkout = Checkout::completeCheckout($ck_order_id);
 
             if ($complete_checkout) {
