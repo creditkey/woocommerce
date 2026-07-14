@@ -171,7 +171,7 @@ class CreditKeyNotCheckoutPayment
                     $(<?php echo wp_json_encode($gateway_settings['promo_message_cart_selector']); ?>).append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>));
                 });
                 <?php else: ?>
-                cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
+                var cartBannerEl = document.getElementById('cartbanner'); if (cartBannerEl) { cartBannerEl.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>); }
                 <?php endif; ?>
             </script>
             <?php
