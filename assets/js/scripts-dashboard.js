@@ -9,7 +9,7 @@ jQuery(document).ready(function($){
         snow_plugin_options(is_test);
     });
     
-    wp.editor.initialize('woocommerce_credit_key_promo_message', {
+    if (window.wp && wp.editor && document.getElementById('woocommerce_credit_key_promo_message')) { wp.editor.initialize('woocommerce_credit_key_promo_message', {
         tinymce: {
 		wpautop  : true,
 		theme    : 'modern',
