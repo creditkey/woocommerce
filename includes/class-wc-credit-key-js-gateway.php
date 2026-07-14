@@ -56,7 +56,7 @@ class CreditKeyNotCheckoutPayment
             return;
         }
 
-        wp_register_script('credit-key-js', 'https://unpkg.com/@credit-key/creditkey-js@1.3.1/umd/creditkey-js.js', null, '1.3.1');
+        wp_register_script('credit-key-js', Main::$plugin_url . 'assets/js/creditkey-js.js', [], '1.3.1');
         wp_enqueue_script('credit-key-js');
 
         wp_register_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array(
