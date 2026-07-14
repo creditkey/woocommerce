@@ -443,6 +443,10 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         $remoteId = $this->get_credit_key_merchant_order_id($order_id);
 
+        $order = wc_get_order($order_id);
+        $order->update_meta_data('ck_merchant_order_id', $remoteId);
+        $order->save();
+
         $returnUrl = home_url() . '/wc-api/credit_key?order_id=' . urlencode($order_id) . '&id=%CKKEY%';
 
         $cancelUrl = wc_get_checkout_url();
@@ -519,7 +523,9 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 exit;
             }
 
-            if ($remote_order->getMerchantOrderId() !== $this->get_credit_key_merchant_order_id($order->get_id())) {
+            $stored_merchant_id = $order->get_meta('ck_merchant_order_id', true);
+            $expected_merchant_id = $stored_merchant_id ?: $this->get_credit_key_merchant_order_id($order->get_id());
+            if ($remote_order->getMerchantOrderId() !== $expected_merchant_id) {
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
