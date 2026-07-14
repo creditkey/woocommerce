@@ -508,7 +508,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 exit;
             }
 
-            if (!$order || $order->get_payment_method() !== $this->id) {
+            if ($order->get_payment_method() !== $this->id) {
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
@@ -740,7 +740,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
                 if ($is_confirmed && !$is_refunded && !$is_cancelled) {
                     foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key != 'wc-completed' && $status_key != 'wc-cancelled' && $status_key != 'wc-refunded') {
+                        if ($status_key !== 'wc-completed' && $status_key !== 'wc-cancelled' && $status_key !== 'wc-refunded') {
                             unset($wc_statuses_arr[$status_key]);
                         }
                     }
@@ -748,7 +748,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
                 if ($is_refunded) {
                     foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key != 'wc-refunded') {
+                        if ($status_key !== 'wc-refunded') {
                             unset($wc_statuses_arr[$status_key]);
                         }
                     }
@@ -756,7 +756,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
                 if ($is_cancelled) {
                     foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key != 'wc-cancelled') {
+                        if ($status_key !== 'wc-cancelled') {
                             unset($wc_statuses_arr[$status_key]);
                         }
                     }
