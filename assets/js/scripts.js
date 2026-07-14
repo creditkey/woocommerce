@@ -33,7 +33,7 @@ jQuery(document).ready(function ($) {
             let amount = $('.price-rule-active').data('price-rules-amount');
     
             if (current_amount != amount) {
-                price = price.replace(/\s/g, '');
+                price = Number(String(price).replace(/\s/g, ''));
                 current_amount = amount;
                 let charges = new ck.Charges(price, 0, 0, 0, price);
                 pdp.innerHTML = client.get_pdp_display(charges);
