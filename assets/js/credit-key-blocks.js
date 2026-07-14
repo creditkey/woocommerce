@@ -27,7 +27,11 @@
         label: wp.element.createElement( Label ),
         content: wp.element.createElement( Content ),
         edit: wp.element.createElement( Content ),
-        canMakePayment: () => !! settings.isEligible,
+        canMakePayment: ( { cart } ) => {
+            if ( ! settings.isEligible ) return false;
+            const cartTotal = parseInt( cart.cartTotals.total_price, 10 ) / 100;
+            return cartTotal > ( settings.minCheckout || 0 );
+        },
         ariaLabel: settings.ariaLabel || 'Credit Key',
         icons: settings.icon ? [ settings.icon ] : [],
         supports: {

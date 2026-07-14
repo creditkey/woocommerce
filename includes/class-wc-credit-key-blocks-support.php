@@ -47,6 +47,7 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
                 'ariaLabel'   => __( 'Credit Key', 'credit_key' ),
                 'description' => $description,
                 'isEligible'  => $is_eligible,
+                'minCheckout' => isset( $this->settings['min_checkout'] ) ? (float) $this->settings['min_checkout'] : 0,
                 'icon'        => Main::$plugin_url . 'assets/images/credit-key-payment-method-new-logo.svg',
             ];
         }
