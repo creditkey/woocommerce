@@ -54,7 +54,7 @@ jQuery(document).ready(function($){
 	},
         quicktags: true,
         mediaButtons: true
-    });
+    }); }
     
     function snow_plugin_options(is_test){
         if( is_test ){
