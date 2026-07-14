@@ -150,7 +150,7 @@ class CreditKeyNotCheckoutPayment
         
         $cart_totals            = $woocommerce->cart->get_totals();
         $cart_total             = (float)$cart_totals['total'];
-        $min_total              = $gateway_settings['min_cart'];
+        $min_total              = isset($gateway_settings['min_cart']) ? (float) $gateway_settings['min_cart'] : 0;
         $gateway_settings['cart_alignment_desktop'] = !isset($gateway_settings['cart_alignment_desktop']) || $gateway_settings['cart_alignment_desktop'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_desktop'];
         $gateway_settings['cart_alignment_mobile'] = !isset($gateway_settings['cart_alignment_mobile']) || $gateway_settings['cart_alignment_mobile'] == 'centered' ? 'center' : $gateway_settings['cart_alignment_mobile'];
         $cart_alignment_desktop = "'" . $gateway_settings['cart_alignment_desktop'] . "'";
