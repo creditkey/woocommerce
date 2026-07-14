@@ -168,7 +168,7 @@ class CreditKeyNotCheckoutPayment
                 let charges = new ck.Charges(<?php echo $cart_total; ?>, 0, 0, 0, <?php echo $cart_total; ?>);
                 <?php if (! empty($gateway_settings['promo_message_cart_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $('<?php echo $gateway_settings['promo_message_cart_selector'] ?>').append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>));
+                    $(<?php echo wp_json_encode($gateway_settings['promo_message_cart_selector']); ?>).append(client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>));
                 });
                 <?php else: ?>
                 cartbanner.innerHTML = client.get_cart_display(charges, <?php echo $cart_alignment_desktop . ", " . $cart_alignment_mobile; ?>);
