@@ -8,7 +8,7 @@ namespace CreditKey;
  * Author: Credit Key
  * Author URI: https://www.creditkey.com
  * Version: 2.2
- * Text Domain: credit-key-payment-gateway
+ * Text Domain: credit_key
  * WC tested up to: 10.5.3
  * WC requires at least: 8.4
  */
@@ -39,7 +39,7 @@ class Main
         $country = $woo_countries->get_base_country();
         if ( $country != 'US' ) { ?>
             <div class="error notice">
-                <p><?php _e('Credit Key requiers "United States" to be a default country.', 'credit_key'); ?></p>
+                <p><?php _e('Credit Key requires "United States" to be a default country.', 'credit_key'); ?></p>
             </div>
             <?php
         }

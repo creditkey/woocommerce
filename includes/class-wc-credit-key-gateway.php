@@ -246,7 +246,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
         }
         wp_register_script('creditkey-dashboard-scripts', Main::$plugin_url . 'assets/js/scripts-dashboard.js', ['jquery'], time());
         wp_enqueue_script('creditkey-dashboard-scripts');
-        wp_enqueue_editor();
     }
 
     private function get_customer_id()
@@ -477,7 +476,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
     {
         $order = wc_get_order($order_id);
         $ck_order_id = $order ? $order->get_meta('ck_order_id', true) : '';
-        if (isset($ck_order_id) && $amount > 0) {
+        if (!empty($ck_order_id) && $amount > 0) {
 
             $is_confirmed = $order ? $order->get_meta('ck_is_confirmed', true) : '';
 
@@ -505,7 +504,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $order = wc_get_order($order_id);
 
             if (!$order) {
-                wp_redirect(wc_get_checkout_url());
+                wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
 
@@ -545,7 +544,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 exit;
 
             } else {
-                wp_redirect(wc_get_checkout_url());
+                wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
         }
@@ -606,21 +605,23 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
     public function call_credit_key_order_cancel($order_id)
     {
+        $order = wc_get_order($order_id);
+        if (!$order || $order->get_payment_method() != $this->id) {
+            return;
+        }
+
         try {
-            $order          = wc_get_order($order_id);
-            $payment_method = $order->get_payment_method();
-            if ($payment_method == $this->id) {
-                $ck_order_id  = $order->get_meta('ck_order_id', true);
-                if (!empty($ck_order_id)) {
-                    Api::configure($this->api_url, $this->public_key, $this->shared_secret);
-                    Orders::cancel($ck_order_id);
-                }
-                $order->update_meta_data('ck_is_cancelled', true);
-                $order->save();
+            $ck_order_id  = $order->get_meta('ck_order_id', true);
+            if (!empty($ck_order_id)) {
+                Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+                Orders::cancel($ck_order_id);
             }
         } catch (Exception $e) {
             $this->lets_log($e);
         }
+
+        $order->update_meta_data('ck_is_cancelled', true);
+        $order->save();
     }
 
     public function call_credit_key_order_refund($order_id)

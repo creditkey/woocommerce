@@ -31,8 +31,9 @@ jQuery(document).ready(function ($) {
     
             let price = $('.price-rule-active').data('price-rules-price');
             let amount = $('.price-rule-active').data('price-rules-amount');
+            let pdp = document.getElementById('pdp');
     
-            if (current_amount != amount) {
+            if (current_amount != amount && pdp) {
                 price = Number(String(price).replace(/\s/g, ''));
                 current_amount = amount;
                 let charges = new ck.Charges(price, 0, 0, 0, price);
