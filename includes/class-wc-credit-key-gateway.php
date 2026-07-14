@@ -93,6 +93,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         add_action('woocommerce_order_status_completed', [$this, 'call_credit_key_order_confirm'], 10, 1);
         add_action('woocommerce_order_status_cancelled', [$this, 'call_credit_key_order_cancel'], 10, 1);
+        add_action('woocommerce_order_status_refunded', [$this, 'call_credit_key_order_refund'], 10, 1);
         add_action('woocommerce_update_order', [$this, 'call_credit_key_order_update'], 10, 1);
 
         add_filter('wc_order_statuses', [$this, 'control_order_statuses'], 10, 1);
@@ -307,20 +308,19 @@ class WC_Credit_Key extends WC_Payment_Gateway
                     if ($order_id) {
                         $order = wc_get_order($order_id);
                         if ($order) {
-foreach ($order->get_items() as $item) {
-    $product_id = $item->get_product_id();
-    $name       = $item->get_name();
-    $quantity   = (int) $item->get_quantity();
-    $price      = $quantity > 0 ? (float) $item->get_subtotal() / $quantity : 0.0;
-    $sku        = '';
-    $product    = $item->get_product();
-    if ($product) {
-        $sku = $product->get_sku();
-    }
-    $cart_items[] = new CartItem($product_id, $name, $price, $sku, $quantity, null, null);
-}
-                            }
                             $cart_total = (float) $order->get_total();
+                            foreach ($order->get_items() as $item) {
+                                $product_id = $item->get_product_id();
+                                $name       = $item->get_name();
+                                $quantity   = (int) $item->get_quantity();
+                                $price      = $quantity > 0 ? (float) $item->get_subtotal() / $quantity : 0.0;
+                                $sku        = '';
+                                $product    = $item->get_product();
+                                if ($product) {
+                                    $sku = $product->get_sku();
+                                }
+                                $cart_items[] = new CartItem($product_id, $name, $price, $sku, $quantity, null, null);
+                            }
                         }
                     }
                 } else {
@@ -555,8 +555,11 @@ foreach ($order->get_items() as $item) {
             if ($payment_method == $this->id) {
                 $is_confirmed = $order->get_meta('ck_is_confirmed', true);
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
+                $is_cancelled = $order->get_meta('ck_is_cancelled', true)
+                    || $order->has_status('cancelled')
+                    || !is_null($order->get_date_cancelled());
 
-if (!$is_confirmed && !$order->get_meta('ck_is_cancelled', true)) {
+                if (!$is_confirmed && !$is_cancelled) {
 
                     $order_status = $order->get_status();
 
@@ -601,16 +604,38 @@ if (!$is_confirmed && !$order->get_meta('ck_is_cancelled', true)) {
             $order          = wc_get_order($order_id);
             $payment_method = $order->get_payment_method();
             if ($payment_method == $this->id) {
-                $is_confirmed = $order->get_meta('ck_is_confirmed', true);
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
-
-                if (!$is_confirmed) {
-
+                if (!empty($ck_order_id)) {
                     Api::configure($this->api_url, $this->public_key, $this->shared_secret);
-
-                    $ck_order = Orders::cancel($ck_order_id);
+                    Orders::cancel($ck_order_id);
                 }
                 $order->update_meta_data('ck_is_cancelled', true);
+                $order->save();
+            }
+        } catch (Exception $e) {
+            $this->lets_log($e);
+        }
+    }
+
+    public function call_credit_key_order_refund($order_id)
+    {
+        try {
+            $order          = wc_get_order($order_id);
+            $payment_method = $order->get_payment_method();
+            if ($payment_method == $this->id) {
+                $is_confirmed = $order->get_meta('ck_is_confirmed', true);
+                $is_refunded  = $order->get_meta('ck_is_refunded', true);
+                $ck_order_id  = $order->get_meta('ck_order_id', true);
+
+                if ($is_confirmed && !$is_refunded && !empty($ck_order_id)) {
+                    $refund_amount = (float) $order->get_total_refunded();
+                    if ($refund_amount <= 0) {
+                        $refund_amount = (float) $order->get_total();
+                    }
+                    Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+                    Orders::refund($ck_order_id, $refund_amount);
+                }
+                $order->update_meta_data('ck_is_refunded', true);
                 $order->save();
             }
         } catch (Exception $e) {
@@ -631,9 +656,11 @@ if (!$is_confirmed && !$order->get_meta('ck_is_cancelled', true)) {
             $payment_method = $order->get_payment_method();
 
             if ($payment_method === $this->id) {
-                // Skip updates if already confirmed by Credit Key
+                $order_status = $order->get_status();
+
+                // Skip non-terminal updates if already confirmed by Credit Key.
                 $is_confirmed = $order->get_meta('ck_is_confirmed', true);
-                if ($is_confirmed) {
+                if ($is_confirmed && !in_array($order_status, ['cancelled', 'refunded'], true)) {
                     return;
                 }
                 $ck_order_id = $order->get_meta('ck_order_id', true);
@@ -648,7 +675,6 @@ if (!$is_confirmed && !$order->get_meta('ck_is_cancelled', true)) {
                     return;
                 }
 
-                $order_status = $order->get_status();
                 $allowed_statuses = ['processing', 'completed', 'refunded', 'cancelled'];
                 if (!in_array($order_status, $allowed_statuses, true)) {
                     if ($this->logging === 'yes') {
