@@ -699,7 +699,8 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $shipping_address = $order_data['shipping_address'];
                 $charges = $order_data['charges'];
 
-                $merchant_order_no = $this->get_credit_key_merchant_order_id($order_id);
+                $merchant_order_no = $order->get_meta('ck_merchant_order_id', true)
+                    ?: $this->get_credit_key_merchant_order_id($order_id);
 
                 Api::configure($this->api_url, $this->public_key, $this->shared_secret);
                 Orders::update($ck_order_id, $order_status, $merchant_order_no, $order_items, $charges, $shipping_address);
