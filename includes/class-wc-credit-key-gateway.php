@@ -494,23 +494,9 @@ class WC_Credit_Key extends WC_Payment_Gateway
     public function webhook() {
         if (isset($_GET['id'], $_GET['order_id'])) {
 
-            $ck_order_id = sanitize_text_field($_GET['id']);
-            $order_number = sanitize_text_field($_GET['order_id']);
-
-            // Allow custom mapping from order_number to internal order ID
-            $internal_order_id = apply_filters(
-                'woocommerce_credit_key_order_id_from_number',
-                function_exists('wc_sequential_order_numbers')
-                    ? wc_sequential_order_numbers()->find_order_by_order_number($order_number)
-                    : 0,
-                $order_number
-            );
-
-            if ($internal_order_id) {
-                $order = wc_get_order($internal_order_id);
-            } else {
-                $order = wc_get_order($order_number);
-            }
+            $ck_order_id = sanitize_text_field(wp_unslash($_GET['id']));
+            $order_id = absint($_GET['order_id']);
+            $order = wc_get_order($order_id);
 
             if (!$order) {
                 wp_redirect(wc_get_checkout_url());
