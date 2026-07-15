@@ -484,7 +484,10 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 Api::configure($this->api_url, $this->public_key, $this->shared_secret);
                 $refund_order = Orders::refund($ck_order_id, $amount);
                 if ($order) {
-                    $order->update_meta_data('ck_is_refunded', true);
+                    $total_refunded = (float) $order->get_meta('ck_refunded_amount', true) + (float) $amount;
+                    $order_total = (float) $order->get_total();
+                    $order->update_meta_data('ck_refunded_amount', $total_refunded);
+                    $order->update_meta_data('ck_is_refunded', $total_refunded >= $order_total);
                     $order->save();
                 }
 
@@ -637,15 +640,25 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $is_refunded  = $order->get_meta('ck_is_refunded', true);
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
 
-                if ($is_confirmed && !$is_refunded && !empty($ck_order_id)) {
-                    $refund_amount = (float) $order->get_total_refunded();
-                    if ($refund_amount <= 0) {
-                        $refund_amount = (float) $order->get_total();
+                if ($is_confirmed && !empty($ck_order_id)) {
+                    $target_refund_amount = (float) $order->get_total_refunded();
+                    if ($target_refund_amount <= 0) {
+                        $target_refund_amount = (float) $order->get_total();
                     }
-                    Api::configure($this->api_url, $this->public_key, $this->shared_secret);
-                    Orders::refund($ck_order_id, $refund_amount);
+
+                    $refunded_amount = (float) $order->get_meta('ck_refunded_amount', true);
+                    $remaining_refund_amount = max(0, $target_refund_amount - $refunded_amount);
+
+                    if (!$is_refunded && $remaining_refund_amount > 0) {
+                        Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+                        Orders::refund($ck_order_id, $remaining_refund_amount);
+                        $refunded_amount += $remaining_refund_amount;
+                        $order->update_meta_data('ck_refunded_amount', $refunded_amount);
+                    }
                 }
-                $order->update_meta_data('ck_is_refunded', true);
+                $order_total = (float) $order->get_total();
+                $total_refunded = (float) $order->get_meta('ck_refunded_amount', true);
+                $order->update_meta_data('ck_is_refunded', $total_refunded >= $order_total);
                 $order->save();
             }
         } catch (Exception $e) {
