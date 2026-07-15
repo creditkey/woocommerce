@@ -667,10 +667,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
 
                 if ($is_confirmed && !empty($ck_order_id)) {
-                    $target_refund_amount = (float) $order->get_total_refunded();
-                    if ($target_refund_amount <= 0) {
-                        $target_refund_amount = (float) $order->get_total();
-                    }
+                    $target_refund_amount = (float) $order->get_total();
 
                     $refunded_amount = (float) $order->get_meta('ck_refunded_amount', true);
                     $remaining_refund_amount = max(0, $target_refund_amount - $refunded_amount);
