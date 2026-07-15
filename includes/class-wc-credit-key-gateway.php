@@ -541,6 +541,8 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 try {
                     Api::configure($this->api_url, $this->public_key, $this->shared_secret);
                     Orders::cancel($ck_order_id);
+                    $order->update_meta_data('ck_is_cancelled', true);
+                    $order->save();
                 } catch (Exception $e) {
                     $this->lets_log($e);
                 }
