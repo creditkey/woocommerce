@@ -5,7 +5,7 @@ namespace CreditKey;
 class CreditKeyNotCheckoutPayment
 {
     private static $instance;
-    public string $gateway_id;
+    public $gateway_id;
     /**
      * @var array|null
      */

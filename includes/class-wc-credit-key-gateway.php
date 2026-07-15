@@ -448,7 +448,9 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         $returnUrl = home_url() . '/wc-api/credit_key?order_id=' . urlencode($order_id) . '&id=%CKKEY%';
 
-        $cancelUrl = wc_get_checkout_url();
+        $cancelUrl = (function_exists('is_checkout_pay_page') && is_checkout_pay_page())
+            ? $order->get_checkout_payment_url()
+            : wc_get_checkout_url();
 
         // Server-to-server callback Credit Key uses to complete administratively
         // approved pended orders, independent of the borrower's browser session.
