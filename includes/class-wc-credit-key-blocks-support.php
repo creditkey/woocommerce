@@ -49,6 +49,7 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
                 'isEligible'  => $is_eligible,
                 'minCheckout' => isset( $this->settings['min_checkout'] ) ? (float) $this->settings['min_checkout'] : 0,
                 'icon'        => Main::$plugin_url . 'assets/images/credit-key-payment-method-new-logo.svg',
+                'buttonLabel' => __( 'Continue with Credit Key', 'credit_key' ),
             ];
         }
 
@@ -86,4 +87,3 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
         }
     }
 }
-

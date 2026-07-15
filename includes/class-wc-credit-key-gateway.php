@@ -32,10 +32,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
     /** @var bool */
     public $testmode = false;
     /** @var string */
-    public $order_prefix = '';
-    /** @var string */
-    public $order_suffix = '';
-    /** @var string */
     public $public_key = '';
     /** @var string */
     public $shared_secret = '';
@@ -71,8 +67,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
         $this->description   = $this->get_option('description');
         $this->enabled       = $this->get_option('enabled');
         $this->testmode      = ('yes' === $this->get_option('is_test'));
-        $this->order_prefix  = $this->get_option('order_prefix');
-        $this->order_suffix  = $this->get_option('order_suffix');
         $this->public_key    = $this->testmode ? $this->get_option('test_public_key') : $this->get_option('public_key');
         $this->shared_secret = $this->testmode ? $this->get_option('test_shared_secret') : $this->get_option('shared_secret');
         $this->api_url       = $this->testmode ? 'https://staging.creditkey.com/app' : 'https://www.creditkey.com/app';
@@ -93,6 +87,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         add_action('woocommerce_order_status_completed', [$this, 'call_credit_key_order_confirm'], 10, 1);
         add_action('woocommerce_order_status_cancelled', [$this, 'call_credit_key_order_cancel'], 10, 1);
+        add_action('woocommerce_order_status_returned', [$this, 'call_credit_key_order_cancel'], 10, 1);
         add_action('woocommerce_order_status_refunded', [$this, 'call_credit_key_order_refund'], 10, 1);
         add_action('woocommerce_update_order', [$this, 'call_credit_key_order_update'], 10, 1);
 
@@ -132,18 +127,6 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 'type'        => 'number',
                 'description' => 'The minimum order amount to offer Credit Key as a payment method in checkout.',
                 'default'     => 0
-            ],
-            'order_prefix' => [
-                'title'       => esc_html__('Order Prefix', 'credit_key'),
-                'type'        => 'text',
-                'description' => esc_html__('Prefix added to merchant order IDs sent to Credit Key.', 'credit_key'),
-                'default'     => '',
-            ],
-            'order_suffix' => [
-                'title'       => esc_html__('Order Suffix', 'credit_key'),
-                'type'        => 'text',
-                'description' => esc_html__('Suffix added to merchant order IDs sent to Credit Key.', 'credit_key'),
-                'default'     => '',
             ],
             'is_test'      => [
                 'title'       => esc_html__('API Mode', 'credit_key'),
@@ -293,6 +276,22 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
             wc_get_logger()->debug(print_r($data, true), ['source' => $this->id]);
         }
+    }
+
+    private function log_debug($data)
+    {
+        if ($this->logging === 'yes') {
+            wc_get_logger()->debug(print_r($data, true), ['source' => $this->id]);
+        }
+    }
+
+    private function is_returned_order($order)
+    {
+        if (!$order) {
+            return false;
+        }
+
+        return in_array($order->get_status(), ['returned', 'return', 'wc-returned'], true);
     }
 
     public function credit_key_gateway_enable_condition($available_gateways)
@@ -457,10 +456,13 @@ class WC_Credit_Key extends WC_Payment_Gateway
             ? $order->get_checkout_payment_url()
             : wc_get_checkout_url();
 
-        // Server-to-server callback Credit Key uses to complete administratively
-        // approved pended orders, independent of the borrower's browser session.
-        // Points at the same webhook endpoint, which completes orders idempotently.
-        $orderCompleteUrl = $returnUrl;
+        $this->log_debug([
+            'action'            => 'credit_key_begin_checkout_before',
+            'order_id'          => $order_id,
+            'merchant_order_id' => $remoteId,
+            'return_url'        => $returnUrl,
+            'cancel_url'        => $cancelUrl,
+        ]);
 
         Api::configure($this->api_url, $this->public_key, $this->shared_secret);
         $customerCheckoutUrl = Checkout::beginCheckout(
@@ -472,9 +474,15 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $customerId,
             $returnUrl,
             $cancelUrl,
-            $orderCompleteUrl,
             'redirect'
         );
+
+        $this->log_debug([
+            'action'            => 'credit_key_begin_checkout_after',
+            'order_id'          => $order_id,
+            'merchant_order_id' => $remoteId,
+            'checkout_url'      => $customerCheckoutUrl,
+        ]);
 
         return ['result' => 'success', 'redirect' => $customerCheckoutUrl];
     }
@@ -513,38 +521,85 @@ class WC_Credit_Key extends WC_Payment_Gateway
             $order_id = absint($_GET['order_id']);
             $order = wc_get_order($order_id);
 
+            $this->log_debug([
+                'action'      => 'credit_key_webhook_received',
+                'order_id'    => $order_id,
+                'ck_order_id' => $ck_order_id,
+            ]);
+
             if (!$order) {
+                $this->log_debug([
+                    'action'   => 'credit_key_webhook_redirect',
+                    'reason'   => 'missing_order',
+                    'order_id' => $order_id,
+                    'redirect' => wc_get_checkout_url(),
+                ]);
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
 
             if ($order->get_payment_method() !== $this->id) {
+                $this->log_debug([
+                    'action'         => 'credit_key_webhook_redirect',
+                    'reason'         => 'wrong_payment_method',
+                    'order_id'       => $order->get_id(),
+                    'payment_method' => $order->get_payment_method(),
+                    'redirect'       => wc_get_checkout_url(),
+                ]);
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
 
             Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+            $stored_merchant_id = $order->get_meta('ck_merchant_order_id', true);
+            $expected_merchant_id = $stored_merchant_id ?: $this->get_credit_key_merchant_order_id($order->get_id());
+            $remote_order = null;
+
             try {
                 $remote_order = Orders::find($ck_order_id);
             } catch (Exception $e) {
                 $this->lets_log($e);
+                $this->log_debug([
+                    'action'      => 'credit_key_find_order_skipped',
+                    'reason'      => 'find_order_failed',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                ]);
+            }
+
+            if (
+                $remote_order
+                && (string) $remote_order->getMerchantOrderId() !== ''
+                && (string) $remote_order->getMerchantOrderId() !== (string) $expected_merchant_id
+            ) {
+                $this->log_debug([
+                    'action'              => 'credit_key_webhook_redirect',
+                    'reason'              => 'merchant_order_id_mismatch',
+                    'order_id'            => $order->get_id(),
+                    'ck_order_id'         => $ck_order_id,
+                    'expected_merchant_id' => $expected_merchant_id,
+                    'remote_merchant_id'  => $remote_order->getMerchantOrderId(),
+                    'redirect'            => wc_get_checkout_url(),
+                ]);
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
 
-            $stored_merchant_id = $order->get_meta('ck_merchant_order_id', true);
-            $expected_merchant_id = $stored_merchant_id ?: $this->get_credit_key_merchant_order_id($order->get_id());
-            if ($remote_order->getMerchantOrderId() !== $expected_merchant_id) {
-                wp_safe_redirect(wc_get_checkout_url());
+            if ($order->get_meta('ck_checkout_completed', true) || $order->is_paid()) {
+                $this->log_debug([
+                    'action'      => 'credit_key_webhook_redirect',
+                    'reason'      => 'already_completed',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'redirect'    => $order->get_checkout_order_received_url(),
+                ]);
+                wp_safe_redirect($order->get_checkout_order_received_url());
                 exit;
             }
-
-            $order->update_meta_data('ck_order_id', $ck_order_id);
-            $order->save();
 
             $is_cancelled = $order->get_meta('ck_is_cancelled', true)
                 || $order->has_status('cancelled')
-                || !is_null($order->get_date_cancelled());
+                || $this->is_returned_order($order);
 
             if ($is_cancelled) {
                 try {
@@ -554,23 +609,119 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 }
                 $order->update_meta_data('ck_is_cancelled', true);
                 $order->save();
+                $this->log_debug([
+                    'action'      => 'credit_key_webhook_redirect',
+                    'reason'      => 'order_cancelled',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'redirect'    => wc_get_checkout_url(),
+                ]);
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
 
-            $complete_checkout = Checkout::completeCheckout($ck_order_id);
+            $this->log_debug([
+                'action'            => 'credit_key_complete_checkout_before',
+                'order_id'          => $order->get_id(),
+                'ck_order_id'       => $ck_order_id,
+                'merchant_order_id' => $expected_merchant_id,
+            ]);
+
+            try {
+                $complete_checkout = Checkout::completeCheckout($ck_order_id);
+            } catch (Throwable $e) {
+                $this->lets_log($e);
+                $complete_checkout = false;
+            }
+
+            $this->log_debug([
+                'action'            => 'credit_key_complete_checkout_after',
+                'order_id'          => $order->get_id(),
+                'ck_order_id'       => $ck_order_id,
+                'merchant_order_id' => $expected_merchant_id,
+                'success'           => $complete_checkout,
+            ]);
 
             if ($complete_checkout) {
 
+                if (!$remote_order) {
+                    try {
+                        $remote_order = Orders::find($ck_order_id);
+                    } catch (Exception $e) {
+                        $this->lets_log($e);
+                    }
+                }
+
+                if (
+                    $remote_order
+                    && (string) $remote_order->getMerchantOrderId() !== ''
+                    && (string) $remote_order->getMerchantOrderId() !== (string) $expected_merchant_id
+                ) {
+                    $this->log_debug([
+                        'action'              => 'credit_key_webhook_redirect',
+                        'reason'              => 'merchant_order_id_mismatch_after_complete',
+                        'order_id'            => $order->get_id(),
+                        'ck_order_id'         => $ck_order_id,
+                        'expected_merchant_id' => $expected_merchant_id,
+                        'remote_merchant_id'  => $remote_order->getMerchantOrderId(),
+                        'redirect'            => wc_get_checkout_url(),
+                    ]);
+                    wp_safe_redirect(wc_get_checkout_url());
+                    exit;
+                }
+
+                $order->update_meta_data('ck_order_id', $ck_order_id);
+                $order->save();
                 $order->add_order_note(esc_html__('Order paid via Credit Key.', 'credit_key'), 1);
                 $order->payment_complete($ck_order_id);
-                WC()->cart->empty_cart();
+                $order->update_meta_data('ck_checkout_completed', true);
+                $order->save();
+                $order = wc_get_order($order->get_id());
+                $this->log_debug([
+                    'action'      => 'credit_key_post_payment_complete',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'status'      => $order->get_status(),
+                ]);
+                if (function_exists('WC') && WC()->cart) {
+                    WC()->cart->empty_cart();
+                }
+                if ($order->has_status('completed')) {
+                    $this->call_credit_key_order_confirm($order->get_id());
+                } elseif ($order->has_status(['processing', 'refunded', 'cancelled'])) {
+                    $this->call_credit_key_order_update($order->get_id());
+                }
 
                 $thank_you_url = $order->get_checkout_order_received_url();
+                $this->log_debug([
+                    'action'      => 'credit_key_webhook_redirect',
+                    'reason'      => 'checkout_completed',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'redirect'    => $thank_you_url,
+                ]);
                 wp_safe_redirect($thank_you_url);
                 exit;
 
+            } elseif ($order->get_meta('ck_checkout_completed', true) || $order->is_paid()) {
+                $this->log_debug([
+                    'action'      => 'credit_key_webhook_redirect',
+                    'reason'      => 'already_paid_after_complete_failure',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'redirect'    => $order->get_checkout_order_received_url(),
+                ]);
+                wp_safe_redirect($order->get_checkout_order_received_url());
+                exit;
+
             } else {
+                $this->log_debug([
+                    'action'      => 'credit_key_webhook_redirect',
+                    'reason'      => 'complete_checkout_failed',
+                    'order_id'    => $order->get_id(),
+                    'ck_order_id' => $ck_order_id,
+                    'redirect'    => wc_get_checkout_url(),
+                ]);
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
@@ -589,7 +740,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $ck_order_id  = $order->get_meta('ck_order_id', true);
                 $is_cancelled = $order->get_meta('ck_is_cancelled', true)
                     || $order->has_status('cancelled')
-                    || !is_null($order->get_date_cancelled());
+                    || $this->is_returned_order($order);
 
                 if (!$is_confirmed && !$is_cancelled) {
 
@@ -644,6 +795,13 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         try {
             $ck_order_id  = $order->get_meta('ck_order_id', true);
+            $this->log_debug([
+                'action'      => 'credit_key_cancel_before',
+                'order_id'    => $order_id,
+                'ck_order_id' => $ck_order_id,
+                'status'      => $order->get_status(),
+            ]);
+
             if (!empty($ck_order_id)) {
                 Api::configure($this->api_url, $this->public_key, $this->shared_secret);
                 Orders::cancel($ck_order_id);
@@ -659,6 +817,12 @@ class WC_Credit_Key extends WC_Payment_Gateway
         if ($is_cancelled) {
             $order->update_meta_data('ck_is_cancelled', true);
             $order->save();
+            $this->log_debug([
+                'action'      => 'credit_key_cancel_after',
+                'order_id'    => $order_id,
+                'ck_order_id' => $order->get_meta('ck_order_id', true),
+                'status'      => $order->get_status(),
+            ]);
         }
     }
 
@@ -712,7 +876,12 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
                 // Skip non-terminal updates if already confirmed by Credit Key.
                 $is_confirmed = $order->get_meta('ck_is_confirmed', true);
-                if ($is_confirmed && !in_array($order_status, ['cancelled', 'refunded'], true)) {
+                if ($this->is_returned_order($order)) {
+                    $this->call_credit_key_order_cancel($order_id);
+                    return;
+                }
+
+                if ($is_confirmed && !in_array($order_status, ['cancelled', 'returned', 'refunded'], true)) {
                     return;
                 }
                 $ck_order_id = $order->get_meta('ck_order_id', true);
@@ -727,7 +896,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
                     return;
                 }
 
-                $allowed_statuses = ['processing', 'completed', 'refunded', 'cancelled'];
+                $allowed_statuses = ['processing', 'completed', 'refunded', 'cancelled', 'returned'];
                 if (!in_array($order_status, $allowed_statuses, true)) {
                     if ($this->logging === 'yes') {
                         wc_get_logger()->debug(print_r([
@@ -780,13 +949,13 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 $is_refunded  = $order->get_meta('ck_is_refunded', true);
                 $is_cancelled = $order->get_meta('ck_is_cancelled', true);
 
-                if ($order->get_status() === 'cancelled') {
+                if ($order->get_status() === 'cancelled' || $this->is_returned_order($order)) {
                     $is_cancelled = true;
                 }
 
                 if ($is_confirmed && !$is_refunded && !$is_cancelled) {
                     foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key !== 'wc-completed' && $status_key !== 'wc-cancelled' && $status_key !== 'wc-refunded') {
+                        if ($status_key !== 'wc-completed' && $status_key !== 'wc-cancelled' && $status_key !== 'wc-returned' && $status_key !== 'wc-refunded') {
                             unset($wc_statuses_arr[$status_key]);
                         }
                     }
@@ -802,7 +971,7 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
                 if ($is_cancelled) {
                     foreach ($wc_statuses_arr as $status_key => $status) {
-                        if ($status_key !== 'wc-cancelled') {
+                        if ($status_key !== 'wc-cancelled' && $status_key !== 'wc-returned') {
                             unset($wc_statuses_arr[$status_key]);
                         }
                     }
@@ -823,30 +992,10 @@ class WC_Credit_Key extends WC_Payment_Gateway
         return $icon;
     }
 
-    /**
-	 * @param int $order_id
-	 *
-	 * @return string
-	 */
-    public static function get_sequential_order_number($order_id) {
-        if(function_exists( 'wc_sequential_order_numbers' )){
-            $order = wc_get_order($order_id);
-            return $order->get_meta( '_order_number', true, 'edit' );
-        }
-
-        return strval($order_id);
-    }
-
     private function get_credit_key_merchant_order_id($order_id) {
-        $order_number = self::get_sequential_order_number($order_id);
-        $prefix       = is_string($this->order_prefix) ? $this->order_prefix : '';
-        $suffix       = is_string($this->order_suffix) ? $this->order_suffix : '';
+        $order = wc_get_order($order_id);
 
-        return apply_filters(
-            'woocommerce_credit_key_order_number',
-            $prefix . $order_number . $suffix,
-            $order_id
-        );
+        return $order ? (string) $order->get_order_number() : (string) $order_id;
     }
 
     public function prevent_unauthorized_status_change($order) {
@@ -866,6 +1015,10 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
         if ($db_order->get_status() === 'cancelled' && $order->get_status() !== 'cancelled') {
             $order->set_status('cancelled');
+        }
+
+        if ($this->is_returned_order($db_order) && !$this->is_returned_order($order)) {
+            $order->set_status('returned');
         }
     }
 }

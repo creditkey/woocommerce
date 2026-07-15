@@ -34,7 +34,7 @@ class CreditKeyNotCheckoutPayment
     
     public function payment_scripts()
     {
-        $gateway_settings     = $this->gateway_settings;
+        $gateway_settings     = is_array($this->gateway_settings) ? $this->gateway_settings : [];
 
 	    if ( empty( $gateway_settings ) ) {
 		    return;
@@ -65,8 +65,9 @@ class CreditKeyNotCheckoutPayment
         ), defined('WP_DEBUG') && WP_DEBUG ? time() : '2.2');
         wp_enqueue_script('credit-key-scripts');
 
-        $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
-        $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
+        $is_test = isset($gateway_settings['is_test']) ? $gateway_settings['is_test'] : 'no';
+        $environment = ($is_test == "yes") ? 'staging' : 'production';
+        $public_key  = ($is_test == "yes") ? ($gateway_settings['test_public_key'] ?? '') : ($gateway_settings['public_key'] ?? '');
         $cart_alignment_desktop = isset($gateway_settings['cart_alignment_desktop']) && $gateway_settings['cart_alignment_desktop'] !== 'centered' ? $gateway_settings['cart_alignment_desktop'] : 'center';
         $cart_alignment_mobile  = isset($gateway_settings['cart_alignment_mobile']) && $gateway_settings['cart_alignment_mobile'] !== 'centered' ? $gateway_settings['cart_alignment_mobile'] : 'center';
 
@@ -98,12 +99,15 @@ class CreditKeyNotCheckoutPayment
     
     public function add_credit_key_button()
     {
-        $gateway_settings     = $this->gateway_settings;
+        $gateway_settings     = is_array($this->gateway_settings) ? $this->gateway_settings : [];
         $show_on_product_page = (isset($gateway_settings['product_page'])) ? $gateway_settings['product_page'] : 'no';
         $active_plugin        = (isset($gateway_settings['enabled'])) ? $gateway_settings['enabled'] : 'no';
         
         $product_id    = get_the_ID();
         $product       = wc_get_product($product_id);
+        if (! $product) {
+            return;
+        }
         $product_price = $product->get_price();
         $min_total     = isset($gateway_settings['min_product']) ? $gateway_settings['min_product'] : 0;
         $button_type   = isset($gateway_settings['button_display']) ? $gateway_settings['button_display'] : '';
@@ -122,8 +126,9 @@ class CreditKeyNotCheckoutPayment
             
             echo '</div>';
             
-            $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
-            $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
+            $is_test = isset($gateway_settings['is_test']) ? $gateway_settings['is_test'] : 'no';
+            $environment = ($is_test == "yes") ? 'staging' : 'production';
+            $public_key  = ($is_test == "yes") ? ($gateway_settings['test_public_key'] ?? '') : ($gateway_settings['public_key'] ?? '');
             ?>
             <script type="text/javascript">
                 let client = new ck.Client('<?php echo $public_key; ?>', '<?php echo $environment; ?>');
@@ -143,16 +148,21 @@ class CreditKeyNotCheckoutPayment
                 <?php else: ?>
                 if (pdp) { pdp.innerHTML = client.get_pdp_display(charges); }
                 <?php endif; ?>
-            </script>
-        }
-    }
+	            </script>
+	            <?php
+	        }
+	    }
     
     public function add_credit_key_button_to_cart()
     {
         global $woocommerce;
-        $gateway_settings  = $this->gateway_settings;
+        $gateway_settings  = is_array($this->gateway_settings) ? $this->gateway_settings : [];
         $show_on_cart_page = (isset($gateway_settings['cart_page'])) ? $gateway_settings['cart_page'] : 'no';
         $active_plugin     = (isset($gateway_settings['enabled'])) ? $gateway_settings['enabled'] : 'no';
+
+        if (! $woocommerce || ! $woocommerce->cart) {
+            return;
+        }
         
         $cart_totals            = $woocommerce->cart->get_totals();
         $cart_total             = (float)$cart_totals['total'];
@@ -163,8 +173,9 @@ class CreditKeyNotCheckoutPayment
         $cart_alignment_mobile  = "'" . $gateway_settings['cart_alignment_mobile'] . "'";
         
         if ($show_on_cart_page == 'yes' && $cart_total >= $min_total && $active_plugin == 'yes') {
-            $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
-            $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
+            $is_test = isset($gateway_settings['is_test']) ? $gateway_settings['is_test'] : 'no';
+            $environment = ($is_test == "yes") ? 'staging' : 'production';
+            $public_key  = ($is_test == "yes") ? ($gateway_settings['test_public_key'] ?? '') : ($gateway_settings['public_key'] ?? '');
             echo '<div>';
             echo '<div id="cartbanner"></div>';
             echo '</div>';
@@ -186,6 +197,10 @@ class CreditKeyNotCheckoutPayment
     
     public function get_cart_data_handler()
     {
+        if (! function_exists('WC') || ! WC()->cart) {
+            wp_send_json_error(['message' => 'Cart is not available.'], 400);
+        }
+
         $cart_totals         = WC()->cart->get_totals();
         $cart_subtotal       = number_format($cart_totals['subtotal'],  2, '.', '' );
         $cart_tax_total      = number_format($cart_totals['total_tax'],  2, '.', '' );

@@ -4,6 +4,17 @@
 
     final class Checkout
     {
+        private static function log($message, $data = array())
+        {
+            if (function_exists('wc_get_logger')) {
+                \wc_get_logger()->debug(print_r(array(
+                    'sdk' => 'credit_key',
+                    'message' => $message,
+                    'data' => $data
+                ), true), array('source' => 'credit_key'));
+            }
+        }
+
         public static function isDisplayedInCheckout($cartContents, $customerId)
         {
             $result = \CreditKey\Api::post('/ecomm/is_displayed_in_checkout',
@@ -15,10 +26,10 @@
         }
 
         public static function beginCheckout($cartContents, $billingAddress, $shippingAddress,
-            $charges, $remoteId, $customerId, $returnUrl, $cancelUrl, $orderCompleteUrl, $mode)
+            $charges, $remoteId, $customerId, $returnUrl, $cancelUrl, $mode)
         {
             if (is_null($cartContents) || is_null($billingAddress) || is_null($shippingAddress)
-                || is_null($charges) || is_null($remoteId) || is_null($returnUrl) || is_null($cancelUrl) || is_null($orderCompleteUrl))
+                || is_null($charges) || is_null($remoteId) || is_null($returnUrl) || is_null($cancelUrl))
             {
                 throw new \CreditKey\Exceptions\InvalidRequestException();
             }
@@ -32,7 +43,6 @@
                 'remote_customer_id' => $customerId,
                 'return_url' => $returnUrl,
                 'cancel_url' => $cancelUrl,
-                'order_complete_url' => $orderCompleteUrl,
                 'mode' => $mode
             );
 
@@ -42,8 +52,18 @@
 
         public static function completeCheckout($ckOrderId)
         {
-            $result = \CreditKey\Api::post('/ecomm/complete_checkout', array('id' => $ckOrderId));
-            return $result->success;
+            $formData = array('id' => $ckOrderId);
+            self::log('checkout.complete.request', array('payload' => $formData));
+
+            $result = \CreditKey\Api::post('/ecomm/complete_checkout', $formData);
+            $success = isset($result->success) && filter_var($result->success, FILTER_VALIDATE_BOOLEAN);
+
+            self::log('checkout.complete.response', array(
+                'success' => $success,
+                'response' => $result
+            ));
+
+            return $success;
         }
 
         public static function cancelCheckout($ckOrderId)

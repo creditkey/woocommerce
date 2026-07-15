@@ -36,10 +36,10 @@
             return cartTotal > ( settings.minCheckout || 0 );
         },
         ariaLabel: settings.ariaLabel || 'Credit Key',
+        placeOrderButtonLabel: settings.buttonLabel || 'Continue with Credit Key',
         icons: settings.icon ? [ settings.icon ] : [],
         supports: {
             features: [ 'products', 'refunds' ]
         },
     } );
 } )();
-
