@@ -536,6 +536,18 @@ class WC_Credit_Key extends WC_Payment_Gateway
 
             $order->update_meta_data('ck_order_id', $ck_order_id);
             $order->save();
+
+            if ($order->has_status('cancelled') || $order->get_meta('ck_is_cancelled', true)) {
+                try {
+                    Api::configure($this->api_url, $this->public_key, $this->shared_secret);
+                    Orders::cancel($ck_order_id);
+                } catch (Exception $e) {
+                    $this->lets_log($e);
+                }
+                wp_safe_redirect(wc_get_checkout_url());
+                exit;
+            }
+
             $complete_checkout = Checkout::completeCheckout($ck_order_id);
 
             if ($complete_checkout) {
@@ -618,18 +630,26 @@ class WC_Credit_Key extends WC_Payment_Gateway
             return;
         }
 
+        $is_cancelled = false;
+
         try {
             $ck_order_id  = $order->get_meta('ck_order_id', true);
             if (!empty($ck_order_id)) {
                 Api::configure($this->api_url, $this->public_key, $this->shared_secret);
                 Orders::cancel($ck_order_id);
+                $is_cancelled = true;
+            } else {
+                $is_cancelled = true;
             }
         } catch (Exception $e) {
             $this->lets_log($e);
+            return;
         }
 
-        $order->update_meta_data('ck_is_cancelled', true);
-        $order->save();
+        if ($is_cancelled) {
+            $order->update_meta_data('ck_is_cancelled', true);
+            $order->save();
+        }
     }
 
     public function call_credit_key_order_refund($order_id)

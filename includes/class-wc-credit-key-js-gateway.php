@@ -132,7 +132,13 @@ class CreditKeyNotCheckoutPayment
                 
                 <?php if (! empty($gateway_settings['promo_message_product_selector'])): ?>
                 jQuery(document).ready(function ($) {
-                    $(<?php echo wp_json_encode($gateway_settings['promo_message_product_selector']); ?>).append(client.get_pdp_display(charges));
+                    const target = $(<?php echo wp_json_encode($gateway_settings['promo_message_product_selector']); ?>).first();
+                    if (pdp && target.length) {
+                        target.empty().append(pdp);
+                    }
+                    if (pdp) {
+                        pdp.innerHTML = client.get_pdp_display(charges);
+                    }
                 });
                 <?php else: ?>
                 if (pdp) { pdp.innerHTML = client.get_pdp_display(charges); }
