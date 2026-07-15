@@ -57,12 +57,7 @@ if ( class_exists( 'Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\Abs
                 return false;
             }
 
-            // Minimum order amount check.
-            $min_total  = isset( $this->settings['min_checkout'] ) ? (float) $this->settings['min_checkout'] : 0;
-            $cart_total = (float) WC()->cart->get_totals()['total'];
-            if ( $cart_total <= $min_total ) {
-                return false;
-            }
+            // Defer the amount threshold to canMakePayment(), which receives live cart totals.
 
             // Build cart items for API eligibility check.
             $cart_items = [];
