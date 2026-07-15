@@ -547,7 +547,13 @@ class WC_Credit_Key extends WC_Payment_Gateway
                 || !is_null($order->get_date_cancelled());
 
             if ($is_cancelled) {
-                $this->call_credit_key_order_cancel($order->get_id());
+                try {
+                    Checkout::cancelCheckout($ck_order_id);
+                } catch (Exception $e) {
+                    $this->lets_log($e);
+                }
+                $order->update_meta_data('ck_is_cancelled', true);
+                $order->save();
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }

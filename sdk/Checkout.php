@@ -45,5 +45,11 @@
             $result = \CreditKey\Api::post('/ecomm/complete_checkout', array('id' => $ckOrderId));
             return $result->success;
         }
+
+        public static function cancelCheckout($ckOrderId)
+        {
+            $result = \CreditKey\Api::post('/ecomm/cancel_checkout', array('id' => $ckOrderId));
+            return $result->success;
+        }
     }
 ?>
