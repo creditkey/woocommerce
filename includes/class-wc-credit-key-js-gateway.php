@@ -133,7 +133,7 @@ class CreditKeyNotCheckoutPayment
                 jQuery(document).ready(function ($) {
                     const target = $(<?php echo wp_json_encode($gateway_settings['promo_message_product_selector']); ?>).first();
                     if (pdp && target.length) {
-                        target.empty().append(pdp);
+                        target.append(pdp);
                     }
                     if (pdp) {
                         pdp.innerHTML = client.get_pdp_display(charges);
