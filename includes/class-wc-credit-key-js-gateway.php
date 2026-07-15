@@ -62,8 +62,7 @@ class CreditKeyNotCheckoutPayment
         wp_register_script('credit-key-scripts', Main::$plugin_url . 'assets/js/scripts.js', array(
             'jquery',
             'credit-key-js'
-        ), time());
-        wp_enqueue_script('credit-key-scripts');
+        ), defined('WP_DEBUG') && WP_DEBUG ? time() : '2.2');
 
         $environment = ($gateway_settings['is_test'] == "yes") ? 'staging' : 'production';
         $public_key  = ($gateway_settings['is_test'] == "yes") ? $gateway_settings['test_public_key'] : $gateway_settings['public_key'];
