@@ -27,12 +27,12 @@
         label: wp.element.createElement( Label ),
         content: wp.element.createElement( Content ),
         edit: wp.element.createElement( Content ),
-        canMakePayment: ( { cart } ) => {
+        canMakePayment: ( { cartTotals } ) => {
             if ( ! settings.isEligible ) return false;
-            const minorUnit = Number.isFinite( Number( cart.cartTotals.currency_minor_unit ) )
-                ? Number( cart.cartTotals.currency_minor_unit )
+            const minorUnit = Number.isFinite( Number( cartTotals.currency_minor_unit ) )
+                ? Number( cartTotals.currency_minor_unit )
                 : 2;
-            const cartTotal = parseInt( cart.cartTotals.total_price, 10 ) / Math.pow( 10, minorUnit );
+            const cartTotal = parseInt( cartTotals.total_price, 10 ) / Math.pow( 10, minorUnit );
             return cartTotal > ( settings.minCheckout || 0 );
         },
         ariaLabel: settings.ariaLabel || 'Credit Key',
