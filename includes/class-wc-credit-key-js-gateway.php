@@ -88,8 +88,7 @@ class CreditKeyNotCheckoutPayment
                 'credit-key-js',
                 'credit-key-scripts',
                 'wp-data'
-            ), time(), true);
-            wp_enqueue_script('credit-key-cart-block');
+            ), defined('WP_DEBUG') && WP_DEBUG ? time() : '2.2', true);
         }
 
         wp_enqueue_style('credit-key-styles', Main::$plugin_url . 'assets/css/styles.css');
