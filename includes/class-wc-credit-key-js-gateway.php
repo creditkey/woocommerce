@@ -7,7 +7,7 @@ class CreditKeyNotCheckoutPayment
     private static $instance;
     public $gateway_id;
     /**
-     * @var array|null
+     * @var array|false
      */
     private $gateway_settings;
     
