@@ -239,12 +239,17 @@ class WC_Credit_Key extends WC_Payment_Gateway
         ];
     }
 
-    public function dashboard_payment_scripts()
+    public function dashboard_payment_scripts($hook_suffix = '')
     {
         if ('no' === $this->enabled) {
             return;
         }
-        wp_register_script('creditkey-dashboard-scripts', Main::$plugin_url . 'assets/js/scripts-dashboard.js', ['jquery'], time());
+
+        if ($hook_suffix !== 'woocommerce_page_wc-settings') {
+            return;
+        }
+
+        wp_register_script('creditkey-dashboard-scripts', Main::$plugin_url . 'assets/js/scripts-dashboard.js', ['jquery'], defined('WP_DEBUG') && WP_DEBUG ? time() : '2.2');
         wp_enqueue_script('creditkey-dashboard-scripts');
     }
 
