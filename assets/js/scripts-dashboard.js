@@ -1,14 +1,13 @@
 jQuery(document).ready(function($){
 
     let is_test = $('#woocommerce_credit_key_is_test').prop('checked');
-    console.log(is_test);
     snow_plugin_options(is_test);
 
     $('#woocommerce_credit_key_is_test').on('change', function (){
         let is_test = $(this).prop('checked');
         snow_plugin_options(is_test);
     });
-
+    
     function snow_plugin_options(is_test){
         if( is_test ){
             $('#woocommerce_credit_key_public_key').parents('tr').hide();

@@ -84,15 +84,25 @@
         {
             $response = curl_exec($curl);
             $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+            $curlError = curl_error($curl);
+            $errorMessage = 'Credit Key API request failed';
+            if ($status) {
+                $errorMessage .= ' with HTTP status ' . $status;
+            }
+            if ($curlError) {
+                $errorMessage .= ': ' . $curlError;
+            } elseif ($response) {
+                $errorMessage .= ': ' . $response;
+            }
 
             if ($status == 401)
-                throw new \CreditKey\Exceptions\ApiUnauthorizedException();
+                throw new \CreditKey\Exceptions\ApiUnauthorizedException($errorMessage);
             else if ($status == 404)
-                throw new \CreditKey\Exceptions\NotFoundException();
+                throw new \CreditKey\Exceptions\NotFoundException($errorMessage);
             else if ($status == 400)
-                throw new \CreditKey\Exceptions\InvalidRequestException();
+                throw new \CreditKey\Exceptions\InvalidRequestException($errorMessage);
             else if ($status != 200)
-                throw new \CreditKey\Exceptions\OperationErrorException();
+                throw new \CreditKey\Exceptions\OperationErrorException($errorMessage);
 
             // fwrite(STDERR, print_r($result, true));
             return json_decode($response);

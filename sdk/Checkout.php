@@ -4,6 +4,17 @@
 
     final class Checkout
     {
+        private static function log($message, $data = array())
+        {
+            if (function_exists('wc_get_logger')) {
+                \wc_get_logger()->debug(print_r(array(
+                    'sdk' => 'credit_key',
+                    'message' => $message,
+                    'data' => $data
+                ), true), array('source' => 'credit_key'));
+            }
+        }
+
         public static function isDisplayedInCheckout($cartContents, $customerId)
         {
             $result = \CreditKey\Api::post('/ecomm/is_displayed_in_checkout',
@@ -41,7 +52,23 @@
 
         public static function completeCheckout($ckOrderId)
         {
-            $result = \CreditKey\Api::post('/ecomm/complete_checkout', array('id' => $ckOrderId));
+            $formData = array('id' => $ckOrderId);
+            self::log('checkout.complete.request', array('payload' => $formData));
+
+            $result = \CreditKey\Api::post('/ecomm/complete_checkout', $formData);
+            $success = isset($result->success) && filter_var($result->success, FILTER_VALIDATE_BOOLEAN);
+
+            self::log('checkout.complete.response', array(
+                'success' => $success,
+                'response' => $result
+            ));
+
+            return $success;
+        }
+
+        public static function cancelCheckout($ckOrderId)
+        {
+            $result = \CreditKey\Api::post('/ecomm/cancel_checkout', array('id' => $ckOrderId));
             return $result->success;
         }
     }
